@@ -1,0 +1,838 @@
+{
+  "app": {
+    "name": "Comitor AI Usage",
+    "description": "Quản lý key hãng, cấp mã nội bộ và theo dõi sử dụng AI trong không gian làm việc."
+  },
+  "common": {
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu…",
+    "saved": "Đã lưu",
+    "cancel": "Huỷ",
+    "clearSelection": "Xoá lựa chọn",
+    "clearAllSelections": "Xoá tất cả lựa chọn",
+    "close": "Đóng",
+    "delete": "Xoá",
+    "create": "Tạo",
+    "edit": "Sửa",
+    "retry": "Thử lại",
+    "viewAll": "Xem tất cả",
+    "discard": "Bỏ thay đổi",
+    "required": "Bắt buộc",
+    "none": "Không có",
+    "unassigned": "Chưa giao",
+    "formerMember": "Thành viên đã rời nhóm",
+    "notConnected": "Chưa nối backend",
+    "notConnectedHint": "Thao tác này chưa được nối với máy chủ trong bản khởi tạo."
+  },
+  "nav": {
+    "overview": "Tổng quan",
+    "tasks": "Công việc",
+    "projects": "Dự án",
+    "taskNew": "Tạo công việc",
+    "settings": "Cài đặt",
+    "settingsGeneral": "Chung",
+    "settingsNotifications": "Thông báo",
+    "settingsPermissions": "Phân quyền",
+    "settingsAdvanced": "Nâng cao",
+    "aiUsage": "Quản lý AI"
+  },
+  "shell": {
+    "accountTitle": "Việc này thuộc Comitor.Account",
+    "openAccount": "Mở Comitor.Account",
+    "otherAppTitle": "Ứng dụng “{name}” là một sản phẩm riêng",
+    "otherAppDescription": "Mỗi sản phẩm Comitor chạy ở một tên miền riêng.",
+    "upsellTitle": "“{name}” chưa có trong gói hiện tại",
+    "upsellDescription": "Liên hệ quản trị viên để mở thêm ứng dụng cho không gian làm việc này.",
+    "noSeatTitle": "Bạn chưa có chỗ ngồi ở {name}",
+    "noSeatDescription": "Không gian làm việc này đã bật ứng dụng, nhưng bạn chưa được cấp chỗ. Nhờ người quản trị cấp một chỗ ngồi trong Comitor Account.",
+    "slogan": "AI Usage",
+    "skipToContent": "Bỏ qua điều hướng, sang nội dung chính",
+    "signOutEverywhere": "Thoát khỏi mọi sản phẩm"
+  },
+  "roles": {
+    "owner": {
+      "label": "Chủ sở hữu",
+      "short": "Chủ sở hữu",
+      "description": "Người tạo không gian làm việc. Luôn có mọi quyền trong mọi ứng dụng."
+    },
+    "admin": {
+      "label": "Quản trị viên",
+      "short": "Quản trị",
+      "description": "Quản lý thành viên, gói và cài đặt của không gian làm việc."
+    },
+    "member": {
+      "label": "Thành viên",
+      "short": "Thành viên",
+      "description": "Người làm việc hằng ngày trong không gian làm việc."
+    },
+    "guest": {
+      "label": "Khách",
+      "short": "Khách",
+      "description": "Người ngoài được mời vào xem phần được chia sẻ trực tiếp."
+    }
+  },
+  "task": {
+    "status": {
+      "todo": {
+        "label": "Chờ làm",
+        "short": "CL"
+      },
+      "in-progress": {
+        "label": "Đang làm",
+        "short": "ĐL"
+      },
+      "in-review": {
+        "label": "Chờ duyệt",
+        "short": "CD"
+      },
+      "done": {
+        "label": "Hoàn thành",
+        "short": "HT"
+      },
+      "overdue": {
+        "label": "Quá hạn",
+        "short": "QH"
+      }
+    },
+    "priority": {
+      "low": {
+        "label": "Thấp",
+        "short": "T"
+      },
+      "medium": {
+        "label": "Trung bình",
+        "short": "TB"
+      },
+      "high": {
+        "label": "Cao",
+        "short": "C"
+      },
+      "urgent": {
+        "label": "Khẩn",
+        "short": "K"
+      }
+    },
+    "requestType": {
+      "task": {
+        "label": "Công việc thường",
+        "description": "Việc nằm trong kế hoạch của dự án, xử lý theo thứ tự ưu tiên."
+      },
+      "incident": {
+        "label": "Sự cố",
+        "description": "Có lỗi đang ảnh hưởng người dùng, cần xử lý trước các việc khác."
+      },
+      "improvement": {
+        "label": "Cải tiến",
+        "description": "Đề xuất cải thiện trải nghiệm hoặc hiệu năng, xếp vào chu kỳ kế tiếp."
+      },
+      "external": {
+        "label": "Chuyển cho đối tác",
+        "description": "Giao việc cho đơn vị bên ngoài không gian làm việc."
+      }
+    },
+    "field": {
+      "code": "Mã",
+      "title": "Tiêu đề",
+      "summary": "Mô tả",
+      "project": "Dự án",
+      "assignee": "Người phụ trách",
+      "watchers": "Người theo dõi",
+      "status": "Trạng thái",
+      "priority": "Độ ưu tiên",
+      "dueDate": "Hạn chót",
+      "updatedAt": "Cập nhật",
+      "estimate": "Ước lượng",
+      "attachment": "Tệp đính kèm"
+    },
+    "hourUnit": "giờ",
+    "unit": "công việc"
+  },
+  "project": {
+    "status": {
+      "active": {
+        "label": "Đang chạy",
+        "short": "ĐC"
+      },
+      "on-hold": {
+        "label": "Tạm dừng",
+        "short": "TD"
+      },
+      "completed": {
+        "label": "Đã đóng",
+        "short": "ĐĐ"
+      }
+    }
+  },
+  "activity": {
+    "kind": {
+      "created": "Tạo mới",
+      "assigned": "Giao việc",
+      "updated": "Cập nhật",
+      "review-requested": "Chờ duyệt",
+      "completed": "Hoàn thành",
+      "overdue": "Quá hạn",
+      "deleted": "Đã xoá"
+    },
+    "sentence": {
+      "created": "đã tạo công việc",
+      "assigned": "đã giao việc cho {target}",
+      "updated": "đã cập nhật",
+      "review-requested": "đã gửi duyệt",
+      "completed": "đã hoàn thành",
+      "overdue": "chưa hoàn thành đúng hạn",
+      "deleted": "đã xoá công việc"
+    }
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "empty": "Chưa có thông báo nào",
+    "markAllRead": "Đánh dấu đã đọc tất cả",
+    "unreadCount": "{count} chưa đọc",
+    "kind": {
+      "mention": "Nhắc tên",
+      "assignment": "Giao việc",
+      "deadline": "Hạn chót",
+      "system": "Hệ thống"
+    },
+    "sentence": {
+      "mention": "{actor} nhắc tới bạn trong {code} · {title}",
+      "assignment": "Bạn được giao {code} · {title}",
+      "deadline": "{code} · {title} sắp tới hạn",
+      "system": "Cập nhật từ hệ thống"
+    }
+  },
+  "errors": {
+    "unexpected": "Đã có lỗi không mong muốn. Thử lại sau ít phút.",
+    "rateLimited": "Bạn thao tác quá nhanh. Chờ một lát rồi thử lại.",
+    "UNAUTHORIZED": "Bạn cần đăng nhập để dùng chức năng này.",
+    "FORBIDDEN": "Bạn không có quyền thực hiện việc này.",
+    "NOT_FOUND": "Không tìm thấy dữ liệu.",
+    "VALIDATION_ERROR": "Dữ liệu gửi lên chưa hợp lệ.",
+    "RATE_LIMITED": "Bạn thao tác quá nhanh. Chờ một lát rồi thử lại.",
+    "INTERNAL_ERROR": "Máy chủ gặp sự cố. Thử lại sau ít phút.",
+    "SERVICE_UNAVAILABLE": "Chức năng này chưa được cấu hình. Báo cho quản trị viên của không gian làm việc.",
+    "NETWORK_ERROR": "Không gọi được máy chủ. Kiểm tra kết nối mạng.",
+    "TASK_NOT_FOUND": "Công việc không còn tồn tại.",
+    "TASK_CODE_TAKEN": "Mã công việc vừa bị người khác dùng. Thử lại.",
+    "PROJECT_NOT_FOUND": "Dự án không còn tồn tại.",
+    "PROJECT_CLOSED": "Dự án đã đóng nên không nhận việc mới.",
+    "ASSIGNEE_NOT_IN_WORKSPACE": "Người này không còn trong không gian làm việc.",
+    "ATTACHMENT_EMPTY": "Tệp rỗng.",
+    "ATTACHMENT_TYPE_INVALID": "Chỉ nhận ảnh PNG, JPEG hoặc WebP.",
+    "ATTACHMENT_TOO_LARGE": "Ảnh vượt quá 2 MB.",
+    "STORAGE_NOT_CONFIGURED": "Kho ảnh chưa được cấu hình nên chưa đính kèm được tệp.",
+    "boundary": {
+      "title": "Trang này không tải được",
+      "description": "Thử lại; nếu vẫn vậy, báo cho quản trị viên của không gian làm việc.",
+      "descriptionWithDigest": "Thử lại; nếu vẫn vậy, báo cho quản trị viên kèm mã sự cố {digest}.",
+      "retry": "Thử lại"
+    },
+    "STALE_WRITE": "Có người khác vừa đổi mục này. Tải lại trang để xem bản mới trước khi lưu."
+  },
+  "commandPalette": {
+    "placeholder": "Tìm trang, công việc hoặc lệnh…",
+    "empty": "Không có kết quả nào khớp.",
+    "footer": "↑ ↓ để chọn · Enter để mở · Esc để đóng",
+    "navigationGroup": "Điều hướng",
+    "actionsGroup": "Hành động",
+    "tasksGroup": "Công việc",
+    "tasksTruncated": "Công việc · {shown}/{total} kết quả",
+    "accountDescription": "Thành viên, vai trò và hồ sơ cá nhân",
+    "accountKeywords": "thành viên, mời, vai trò, hồ sơ, tài khoản, account",
+    "themeDescription": "Giao diện",
+    "themeToDark": "Chuyển sang chế độ tối",
+    "themeToLight": "Chuyển sang chế độ sáng",
+    "themeKeywords": "theme, giao diện, chế độ, sáng, tối"
+  },
+  "edges": {
+    "backHome": "Về trang tổng quan",
+    "error": {
+      "title": "Đã có lỗi xảy ra",
+      "description": "Trang này không tải được. Thử lại một lần nữa; nếu vẫn lỗi, báo cho quản trị viên của không gian làm việc.",
+      "digest": "Mã sự cố: {digest}"
+    },
+    "notFound": {
+      "title": "Không tìm thấy trang",
+      "description": "Đường dẫn bạn mở không tồn tại hoặc đã được đổi. Kiểm tra lại địa chỉ, hoặc quay về trang tổng quan."
+    },
+    "loading": {
+      "overview": "Đang tải nội dung…",
+      "tasks": "Đang tải danh sách công việc…"
+    }
+  },
+  "overview": {
+    "openTaskBoard": "Bảng công việc",
+    "statsLabel": "Chỉ số nổi bật",
+    "stats": {
+      "open": "Việc đang mở",
+      "done": "Đã hoàn thành",
+      "overdue": "Quá hạn",
+      "averageProgress": "Tiến độ trung bình"
+    },
+    "chart": {
+      "title": "Việc theo dự án",
+      "description": "Số việc đang mở và đã hoàn thành của từng dự án.",
+      "open": "Đang mở",
+      "done": "Hoàn thành",
+      "ariaLabel": "Biểu đồ cột: trục ngang là mã dự án, trục dọc là số công việc; mỗi cột chia thành phần đang mở và phần đã hoàn thành.",
+      "empty": "Chưa có dự án nào để vẽ biểu đồ."
+    },
+    "feed": {
+      "title": "Hoạt động gần đây",
+      "description": "Thay đổi mới nhất trên công việc của cả nhóm.",
+      "empty": "Chưa có hoạt động nào được ghi lại."
+    },
+    "projects": {
+      "title": "Dự án đang chạy",
+      "description": "{count, plural, other {# dự án đang có việc mở.}}",
+      "empty": "Không có dự án nào đang chạy.",
+      "progressLabel": "Tiến độ dự án {name}",
+      "teamLabel": "Thành viên dự án {name}",
+      "meta": "{count, plural, other {# việc}} · hạn {date}"
+    },
+    "myTasks": {
+      "title": "Việc được giao cho bạn",
+      "description": "Việc đang mở mà bạn là người thực hiện.",
+      "emptyTitle": "Chưa có việc nào",
+      "emptyDescription": "Khi có người giao việc cho bạn, việc sẽ xuất hiện ở đây.",
+      "emptyAction": "Xem việc của cả nhóm"
+    }
+  },
+  "settings": {
+    "headerDescription": "Tuỳ chọn và phân quyền của riêng ứng dụng Bản mẫu, áp cho cả không gian làm việc. Không gian làm việc, thành viên và hồ sơ cá nhân do Comitor.Account quản lý.",
+    "tabsLabel": "Mục cài đặt",
+    "loading": "Đang tải cài đặt…",
+    "draft": {
+      "dirty": "Có thay đổi chưa lưu — nhấn <kbd>mod+s</kbd> để lưu nhanh.",
+      "clean": "Mọi thay đổi đã được lưu.",
+      "savedTitle": "Đã lưu cài đặt",
+      "savedDescription": "Thay đổi đã có hiệu lực cho không gian làm việc này.",
+      "undo": "Hoàn tác",
+      "undoneTitle": "Đã hoàn tác thay đổi",
+      "failedTitle": "Chưa lưu được cài đặt"
+    },
+    "general": {
+      "taskTitle": "Công việc",
+      "taskDescription": "Giá trị mặc định của bảng và biểu mẫu công việc, áp cho cả không gian làm việc.",
+      "taskHelpLabel": "Giải thích về giá trị mặc định",
+      "taskHelp": "Đây là giá trị điền sẵn, không phải giới hạn: người dùng vẫn đổi được ở từng việc và từng lần mở bảng.",
+      "defaultPriorityLabel": "Mức ưu tiên mặc định",
+      "defaultPriorityDescription": "Điền sẵn ở biểu mẫu tạo việc; người tạo vẫn đổi được.",
+      "pageSizeLabel": "Số dòng mặc định mỗi trang",
+      "pageSizeDescription": "Cỡ trang lúc mở bảng Công việc, áp cho cả không gian làm việc. Ai cũng đổi được ngay trên bảng.",
+      "pageSizeOption": "{count} dòng",
+      "autoAssignLabel": "Điền sẵn người tạo làm người phụ trách",
+      "autoAssignDescription": "Áp cho mọi người trong không gian làm việc. Người tạo việc vẫn đổi được trước khi gửi.",
+      "appearanceTitle": "Giao diện",
+      "appearanceDescription": "Áp cho riêng bạn, trên thiết bị này.",
+      "themeLabel": "Chế độ sáng / tối",
+      "themeDescription": "Theo hệ điều hành, hoặc cố định một chế độ. Lựa chọn được nhớ cho lần mở sau.",
+      "contrastLabel": "Tương phản cao",
+      "contrastDescription": "Bảng màu đã đo tương phản, dành cho màn hình chói hoặc mắt mỏi.",
+      "densityLabel": "Bố cục gọn",
+      "densityDescription": "Giảm khoảng cách dọc giữa các dòng trong bảng, danh sách và menu.",
+      "fontSizeLabel": "Cỡ chữ",
+      "fontSizeDescription": "Phóng to hoặc thu nhỏ toàn bộ giao diện, kể cả icon và khoảng cách.",
+      "fontSizeOption": {
+        "sm": "Nhỏ",
+        "md": "Vừa",
+        "lg": "Lớn"
+      },
+      "languageLabel": "Ngôn ngữ hiển thị",
+      "languageDescription": "Ngôn ngữ của toàn bộ giao diện trên thiết bị này. Khởi đầu theo hồ sơ Comitor.Account và đi theo thay đổi ở đó, cho tới khi bạn tự chọn ở đây.",
+      "shortcutsTitle": "Phím tắt",
+      "shortcutsDescription": "Ký hiệu hiện theo hệ điều hành đang dùng.",
+      "shortcut": {
+        "command-palette": "Mở bảng lệnh",
+        "app-launcher": "Mở danh sách ứng dụng",
+        "toggle-sidebar": "Thu gọn / mở thanh bên",
+        "save-settings": "Lưu thay đổi ở trang cài đặt"
+      }
+    },
+    "notifications": {
+      "title": "Thông báo của không gian làm việc",
+      "description": "Những sự kiện này của ứng dụng Bản mẫu có được gửi đi hay không. Áp cho mọi người trong không gian làm việc — địa chỉ nhận thư là của riêng bạn và nằm ở hồ sơ Comitor.Account.",
+      "pref": {
+        "assigned": {
+          "label": "Khi có người được giao việc",
+          "description": "Gửi ngay lúc có người giao việc mới hoặc đổi người phụ trách."
+        },
+        "due-soon": {
+          "label": "Nhắc trước hạn chót",
+          "description": "Một ngày trước hạn, gửi cho người phụ trách của những việc có bật nhắc."
+        },
+        "email-digest": {
+          "label": "Gộp thành bản tóm tắt qua email",
+          "description": "Một thư duy nhất thay cho nhiều thông báo lẻ trong ngày."
+        }
+      },
+      "digestLabel": "Gửi bản tóm tắt vào",
+      "digestDescription": "Bản tóm tắt gộp mọi thay đổi trong kỳ thành một thư.",
+      "digestDisabledDescription": "Ô này mở ra khi “Gộp thành bản tóm tắt qua email” ở trên được bật.",
+      "digest": {
+        "daily": "Mỗi sáng, 08:00",
+        "weekly": "Đầu tuần, sáng thứ Hai",
+        "friday": "Cuối tuần, chiều thứ Sáu"
+      }
+    },
+    "permissions": {
+      "accountTitle": "Vai trò do Comitor.Account cấp",
+      "accountBody": "Bốn vai trò dưới đây thuộc không gian làm việc {workspace} và do Comitor.Account cấp — ứng dụng này chỉ đọc. Bảng bên dưới quyết định mỗi vai trò làm được gì <strong>trong ứng dụng</strong>; nó không đổi được vai trò của ai.",
+      "membersLink": "Quản lý thành viên và vai trò ở Comitor.Account",
+      "newTab": "(mở tab mới)",
+      "readOnlyTitle": "Bạn chỉ xem được bảng này",
+      "readOnlyDescription": "Sửa phân quyền cần quyền “Đổi phân quyền”. Bảng vẫn hiện đủ để bạn biết mỗi vai trò làm được gì trong ứng dụng.",
+      "sectionTitle": "Quyền theo chức năng",
+      "sectionDescription": "Bật một ô là vai trò ở cột đó làm được việc ở dòng đó.",
+      "helpLabel": "Giải thích về ô khoá",
+      "help": "Hai ô không đổi được: Chủ sở hữu luôn có mọi quyền (bỏ đi là tự khoá mình ra ngoài), và Khách không bao giờ có quyền ghi. Ẩn một nút không phải là phân quyền — chốt thật nằm ở máy chủ và đọc cùng bảng này.",
+      "featureColumn": "Chức năng",
+      "grantedCount": "{granted}/{total}",
+      "granted": "Đang được cấp",
+      "notGranted": "Chưa được cấp",
+      "yourRole": "Vai trò của bạn",
+      "lock": {
+        "always": {
+          "label": "Luôn được cấp",
+          "reason": "Chủ sở hữu luôn có mọi quyền trong ứng dụng. Bỏ quyền của vai trò này là tự khoá mình ra ngoài."
+        },
+        "never": {
+          "label": "Không cấp được",
+          "reason": "Khách là người ngoài tổ chức nên chỉ được xem. Thao tác ghi không cấp được cho vai trò này."
+        }
+      },
+      "group": {
+        "tasks": "Công việc",
+        "projects": "Dự án",
+        "reports": "Báo cáo",
+        "app": "Quản trị ứng dụng"
+      },
+      "item": {
+        "task_view": {
+          "label": "Xem công việc",
+          "description": "Mở bảng công việc và xem chi tiết từng việc."
+        },
+        "task_create": {
+          "label": "Tạo công việc",
+          "description": "Mở biểu mẫu và tạo việc mới trong không gian làm việc."
+        },
+        "task_edit": {
+          "label": "Sửa công việc",
+          "description": "Đổi tiêu đề, mô tả, trạng thái, hạn chót và ước lượng."
+        },
+        "task_assign": {
+          "label": "Giao việc cho người khác",
+          "description": "Đổi người phụ trách của một việc đã có."
+        },
+        "task_delete": {
+          "label": "Xoá công việc",
+          "description": "Xoá vĩnh viễn một việc, kể cả xoá hàng loạt từ bảng."
+        },
+        "project_view": {
+          "label": "Xem dự án",
+          "description": "Xem danh sách dự án và tiến độ của từng dự án."
+        },
+        "project_create": {
+          "label": "Tạo dự án",
+          "description": "Mở một dự án mới và đặt người phụ trách cho nó."
+        },
+        "report_view": {
+          "label": "Xem báo cáo",
+          "description": "Số liệu tổng hợp ở trang Tổng quan và biểu đồ việc theo dự án."
+        },
+        "report_export": {
+          "label": "Xuất dữ liệu",
+          "description": "Tải tập việc đang lọc ra tệp CSV."
+        },
+        "app_settings": {
+          "label": "Đổi cài đặt ứng dụng",
+          "description": "Các tab Chung, Thông báo và Nâng cao của trang Cài đặt."
+        },
+        "app_permissions": {
+          "label": "Đổi phân quyền",
+          "description": "Chính bảng này — ai được sửa quyền của người khác trong ứng dụng."
+        }
+      }
+    },
+    "advanced": {
+      "dataTitle": "Dữ liệu ứng dụng",
+      "dataDescription": "Áp cho toàn bộ công việc và dự án của ứng dụng này trong không gian làm việc.",
+      "helpLabel": "Giải thích về phạm vi",
+      "help": "Những công tắc này chỉ đụng tới dữ liệu của ứng dụng Công việc. Chính sách chung của không gian làm việc — xác thực hai bước, ai được mời người khác — đặt ở Comitor.Account.",
+      "data": {
+        "public-link": {
+          "label": "Cho phép chia sẻ liên kết công khai tới công việc",
+          "description": "Người có liên kết xem được một công việc mà không cần đăng nhập."
+        },
+        "activity-log": {
+          "label": "Ghi nhật ký thay đổi của công việc",
+          "description": "Lưu lại ai đổi gì, lúc nào — nguồn của mục Hoạt động gần đây ở trang Tổng quan."
+        }
+      },
+      "archiveLabel": "Tự lưu trữ việc đã hoàn thành sau",
+      "archiveDescription": "Việc được lưu trữ vẫn tìm lại được, chỉ không hiện trong bảng mặc định.",
+      "archive": {
+        "30d": "30 ngày",
+        "90d": "90 ngày",
+        "180d": "180 ngày",
+        "never": "Không tự lưu trữ"
+      },
+      "dangerTitle": "Vùng nguy hiểm",
+      "dangerDescription": "Hành động ở nhóm này không hoàn tác được.",
+      "resetTitle": "Xoá dữ liệu của ứng dụng",
+      "resetDescription": "Xoá vĩnh viễn {tasks} công việc, {projects} dự án cùng toàn bộ tệp đính kèm của ứng dụng Công việc trong không gian làm việc này. Không gian làm việc, thành viên và các ứng dụng khác không bị ảnh hưởng.",
+      "resetButton": "Xoá dữ liệu ứng dụng",
+      "dialogTitle": "Xoá dữ liệu của ứng dụng?",
+      "dialogDescription": "Toàn bộ công việc, dự án và tệp đính kèm mà ứng dụng Công việc giữ cho <strong>{workspace}</strong> sẽ bị xoá vĩnh viễn. Không có bản sao lưu và không hoàn tác được. Không gian làm việc và thành viên của nó vẫn còn nguyên ở Comitor.Account.",
+      "confirmLabel": "Xoá vĩnh viễn",
+      "cancelLabel": "Giữ lại",
+      "confirmHint": "Gõ <code>{slug}</code> để mở khoá nút xoá"
+    },
+    "readOnly": {
+      "title": "Bạn chỉ xem được trang này",
+      "description": "Vai trò của bạn trong không gian làm việc này không có quyền đổi cài đặt của ứng dụng. Nhờ chủ sở hữu hoặc quản trị viên thay đổi giúp."
+    },
+    "notYetActive": "Giá trị này được lưu nhưng <strong>chưa có gì đọc nó</strong> — module mẫu chưa dựng job chạy nền cho nó."
+  },
+  "taskNew": {
+    "description": "Điền thông tin để mở một công việc mới trong không gian làm việc.",
+    "directoryUnavailableTitle": "Danh bạ người dùng chưa sẵn sàng",
+    "directoryUnavailableDescription": "Chưa cấu hình đường máy-tới-máy tới Comitor.Account, nên không đọc được danh sách người trong không gian làm việc. Ô “Người phụ trách” sẽ trống và việc gửi biểu mẫu sẽ bị từ chối. Điền COMITOR_M2M_CLIENT_ID và COMITOR_M2M_CLIENT_SECRET vào .env rồi khởi động lại máy chủ.",
+    "sectionContentTitle": "Nội dung công việc",
+    "sectionContentDescription": "Phần mọi người đọc đầu tiên trong danh sách và trong thông báo.",
+    "sectionAssignmentTitle": "Phân công & tiến độ",
+    "sectionAssignmentDescription": "Ai làm, ai theo dõi, xong khi nào.",
+    "sectionApprovalTitle": "Phê duyệt & thông báo",
+    "sectionApprovalDescription": "Ai cần đồng ý trước, và báo cho mọi người bằng cách nào.",
+    "codeDescription": "Hệ thống tự cấp khi công việc được tạo.",
+    "titleDescription": "Một câu mô tả việc cần làm, bắt đầu bằng động từ.",
+    "titlePlaceholder": "Ví dụ: Rà soát thông báo lỗi của biểu mẫu",
+    "summaryDescription": "Cập nhật theo từng thay đổi ở biểu mẫu bên cạnh.",
+    "summaryPlaceholder": "Việc này giải quyết vấn đề gì? Làm xong thì căn cứ vào đâu để nghiệm thu?",
+    "requestTypeLabel": "Loại yêu cầu",
+    "requestTypeDescription": "Quyết định việc đi vào hàng đợi nào.",
+    "externalDisabledReason": "Không gian làm việc này đang tắt việc chia sẻ ra ngoài. Bật ở Cài đặt → Nâng cao.",
+    "attachmentAfterCreate": "Ảnh được đính kèm sau khi công việc đã tạo — tách riêng để tải lại được nếu mạng hỏng, mà không tạo thêm một công việc trùng.",
+    "projectDescription": "Gõ mã dự án hoặc tên, không cần dấu.",
+    "projectPlaceholder": "Chọn dự án",
+    "projectSearchPlaceholder": "Tìm theo tên hoặc mã dự án…",
+    "projectEmpty": "Không có dự án nào khớp.",
+    "assigneeDescription": "Đúng một người chịu trách nhiệm chính.",
+    "assigneePlaceholder": "Chọn người phụ trách",
+    "memberSearchPlaceholder": "Tìm theo tên hoặc email…",
+    "memberEmpty": "Không tìm thấy thành viên.",
+    "watchersDescription": "Nhận thông báo nhưng không chịu trách nhiệm hoàn thành.",
+    "watchersPlaceholder": "Thêm người theo dõi",
+    "watchersSelected": "Đã chọn {selected}/{max}",
+    "watchersOverflow": "Xem tất cả {count} người theo dõi",
+    "priorityDescription": "Quyết định thứ tự trong hàng đợi.",
+    "priorityPlaceholder": "Chọn độ ưu tiên",
+    "dueDateDescription": "Gõ ngày hoặc bấm biểu tượng lịch.",
+    "estimateDescription": "Số giờ làm việc, tối đa {max} giờ cho một công việc.",
+    "approvalToggleLabel": "Cần phê duyệt trước khi giao",
+    "approvalToggleDescription": "Công việc ở trạng thái chờ duyệt cho tới khi người duyệt đồng ý.",
+    "approvalFlowLabel": "Quy trình duyệt",
+    "approvalFlowHint": "Người duyệt nhận thông báo ngay khi công việc được tạo.",
+    "approvalFlowDisabledHint": "Bật “Cần phê duyệt trước khi giao” để chọn quy trình.",
+    "approvalFlowPlaceholder": "Chọn quy trình",
+    "approvalFlowNone": "— Chưa chọn —",
+    "flow": {
+      "team-lead": {
+        "label": "Trưởng nhóm duyệt",
+        "steps": "Một bước: trưởng nhóm của người phụ trách."
+      },
+      "two-level": {
+        "label": "Duyệt hai cấp",
+        "steps": "Hai bước: trưởng nhóm, rồi trưởng bộ phận."
+      },
+      "product-board": {
+        "label": "Hội đồng sản phẩm",
+        "steps": "Họp hội đồng vào thứ Ba hằng tuần."
+      }
+    },
+    "channelsLabel": "Kênh thông báo",
+    "channelsDescription": "Áp dụng cho người phụ trách và người theo dõi.",
+    "channelNotDeliveredYet": "Lựa chọn được lưu, nhưng kênh này chưa giao được — chưa có gì gửi qua nó.",
+    "channel": {
+      "in-app": {
+        "label": "Trong ứng dụng",
+        "description": "Hiện ở chuông thông báo trên thanh trên cùng."
+      },
+      "email": {
+        "label": "Email",
+        "description": "Gửi tới địa chỉ đã xác minh trong hồ sơ Comitor.Account."
+      },
+      "chat": {
+        "label": "Trò chuyện",
+        "description": "Nhắn vào kênh của dự án trong ứng dụng Trò chuyện."
+      },
+      "sms": {
+        "label": "Tin nhắn SMS",
+        "description": "Chỉ dùng cho việc khẩn — tin nhắn có tính phí."
+      }
+    },
+    "remindLabel": "Nhắc trước hạn một ngày",
+    "remindDescription": "Gửi nhắc vào 9 giờ sáng ngày trước hạn chót.",
+    "calendarLabel": "Thêm vào lịch của người phụ trách",
+    "calendarDescription": "Tạo một sự kiện cả ngày vào đúng ngày hết hạn.",
+    "errorSummaryTitle": "Còn {count} mục cần bổ sung",
+    "errorSummaryHint": "Các trường được đánh dấu bên dưới đang thiếu hoặc chưa hợp lệ.",
+    "errorTitleRequired": "Nhập tiêu đề công việc.",
+    "errorTitleShort": "Tiêu đề cần ít nhất {min} ký tự để đồng đội hiểu ngay việc phải làm.",
+    "errorProjectRequired": "Chọn dự án chứa công việc này.",
+    "errorAssigneeRequired": "Chọn người phụ trách — công việc không có chủ sẽ không ai nhận.",
+    "errorDueDateRequired": "Chọn hạn chót cho công việc.",
+    "errorDueDatePast": "Hạn chót đã qua. Chọn lại một ngày từ hôm nay trở đi.",
+    "errorEstimateRequired": "Nhập ước lượng thời gian.",
+    "errorEstimateRange": "Ước lượng phải là số giờ trong khoảng {min}–{max}. Việc lớn hơn nên tách nhỏ.",
+    "errorApprovalFlowRequired": "Chọn quy trình duyệt hoặc tắt yêu cầu phê duyệt.",
+    "errorChannelsRequired": "Chọn ít nhất một kênh để báo cho người phụ trách.",
+    "draftTitle": "Bản nháp",
+    "draftSavedAgo": "Bản lưu gần nhất: <when>vừa xong</when>.",
+    "draftFilledIn": "Nội dung đã được điền lại vào biểu mẫu bên dưới.",
+    "draftHint": "Lưu nháp để quay lại điền tiếp sau.",
+    "restoreDraft": "Khôi phục bản nháp",
+    "saveDraft": "Lưu nháp",
+    "savingDraft": "Đang lưu nháp…",
+    "draftSavedTitle": "Đã lưu nháp",
+    "draftSavedDescription": "Bản nháp chỉ hiện với riêng bạn, trong không gian làm việc này.",
+    "draftRestoredTitle": "Đã khôi phục bản nháp",
+    "draftRestoredDescription": "Biểu mẫu đã quay về đúng nội dung của bản lưu.",
+    "submit": "Tạo công việc",
+    "submitting": "Đang tạo…",
+    "createdTitle": "Đã tạo công việc",
+    "createdDescription": "{code} · {title}",
+    "summaryTitle": "Tóm tắt",
+    "empty": "Chưa chọn",
+    "estimateValue": "{hours} {unit}",
+    "approvalSummaryLabel": "Phê duyệt",
+    "approvalNotNeeded": "Không cần duyệt",
+    "noProjectTitle": "Chưa có dự án nào",
+    "noProjectDescription": "Mọi công việc đều thuộc về một dự án. Tạo dự án đầu tiên rồi quay lại đây.",
+    "noProjectAction": "Sang trang Dự án"
+  },
+  "taskDetail": {
+    "project": "Dự án",
+    "assignee": "Người phụ trách",
+    "due": "Hạn chót",
+    "estimate": "Ước lượng",
+    "attachment": "Tệp đính kèm",
+    "titleAria": "Sửa tên công việc",
+    "summaryAria": "Sửa mô tả công việc",
+    "summaryPlaceholder": "Thêm mô tả…",
+    "savedToast": "Đã lưu.",
+    "properties": "Thuộc tính",
+    "updated": "Cập nhật",
+    "assignedToast": "Đã đổi người phụ trách.",
+    "completedToast": "Đã đánh dấu hoàn thành.",
+    "deletedToast": "Đã xoá {code}.",
+    "attachmentChoose": "Chọn ảnh",
+    "attachmentUploading": "Đang tải…",
+    "attachmentRemove": "Gỡ",
+    "attachmentHint": "PNG, JPG hoặc WebP, tối đa 2 MB. Kéo tệp thả vào đây cũng được.",
+    "attachmentDrop": "Thả để tải lên",
+    "attachmentFailed": "Không tải được tệp lên.",
+    "attachmentSaved": "Đã lưu tệp đính kèm.",
+    "attachmentRemoved": "Đã gỡ tệp đính kèm."
+  },
+  "tasks": {
+    "title": "Công việc",
+    "description": "Toàn bộ việc của không gian làm việc — lọc, sắp xếp và xử lý hàng loạt.",
+    "newTask": "Tạo việc mới",
+    "tableLabel": "Danh sách công việc",
+    "searchPlaceholder": "Tìm theo mã, tên việc, dự án hoặc người phụ trách…",
+    "filter": {
+      "project": "Mọi dự án",
+      "projectSearch": "Tìm dự án…",
+      "projectEmpty": "Không có dự án nào khớp.",
+      "projectLabel": "Lọc theo dự án",
+      "priority": "Mọi mức ưu tiên",
+      "prioritySearch": "Tìm mức ưu tiên…",
+      "priorityEmpty": "Không có mức nào khớp.",
+      "priorityLabel": "Lọc theo mức ưu tiên",
+      "assignee": "Mọi người phụ trách",
+      "assigneeSearch": "Tìm thành viên…",
+      "assigneeEmpty": "Không có thành viên nào khớp.",
+      "assigneeSelected": "Đã chọn {selected}/{max}",
+      "assigneeLabel": "Lọc theo người phụ trách",
+      "statusLabel": "Lọc nhanh theo trạng thái",
+      "statusAll": "Tất cả"
+    },
+    "column": {
+      "actions": "Hành động"
+    },
+    "row": {
+      "actions": "Hành động cho việc {code}",
+      "select": "Chọn việc {code}",
+      "deselect": "Bỏ chọn việc {code}",
+      "open": "Mở việc {code}",
+      "due": "Hạn {date}"
+    },
+    "action": {
+      "edit": "Sửa việc",
+      "assign": "Đổi người phụ trách",
+      "complete": "Đánh dấu hoàn thành",
+      "delete": "Xoá việc",
+      "export": "Xuất danh sách"
+    },
+    "bulk": {
+      "selected": "Đã chọn {count} việc",
+      "clear": "Bỏ chọn",
+      "deleteTitle": "Xoá {count} việc đã chọn?",
+      "deleteDescription": "Việc đã xoá không khôi phục lại được, kể cả bình luận và tệp đính kèm bên trong."
+    },
+    "delete": {
+      "title": "Xoá việc {code}?",
+      "description": "“{title}” sẽ bị xoá khỏi dự án. Không thể hoàn tác."
+    },
+    "empty": {
+      "title": "Chưa có việc nào",
+      "description": "Tạo việc đầu tiên để bắt đầu theo dõi tiến độ của dự án.",
+      "action": "Tạo việc",
+      "filteredTitle": "Không có việc nào khớp",
+      "filteredDescription": "Thử bỏ bớt điều kiện lọc hoặc xoá từ khoá tìm kiếm.",
+      "filteredAction": "Xoá bộ lọc"
+    },
+    "exportFileName": "cong-viec.csv",
+    "toast": {
+      "completed": "Đã hoàn thành {code}.",
+      "deleted": "Đã xoá {code}.",
+      "completedMany": "{count, plural, other {Đã hoàn thành # công việc.}}",
+      "deletedMany": "{count, plural, other {Đã xoá # công việc.}}",
+      "assignedMany": "{count, plural, other {Đã giao # công việc.}}"
+    }
+  },
+  "projects": {
+    "description": "Nhóm công việc theo mục tiêu. Tiến độ được ĐẾM từ công việc, không phải một cột trong database.",
+    "create": "Dự án mới",
+    "createdToast": "Đã tạo dự án {code}.",
+    "emptyTitle": "Chưa có dự án nào",
+    "emptyDescription": "Mọi công việc đều thuộc về một dự án, nên hãy tạo dự án đầu tiên trước khi mở công việc đầu tiên.",
+    "emptyDescriptionReadOnly": "Vai trò của bạn không tạo được dự án. Nhờ chủ sở hữu hoặc quản trị viên tạo giúp.",
+    "nameLabel": "Tên dự án",
+    "namePlaceholder": "Ví dụ: Nền tảng dùng chung",
+    "ownerLabel": "Người phụ trách",
+    "ownerSearch": "Tìm một thành viên…",
+    "ownerEmpty": "Không tìm thấy ai.",
+    "dueLabel": "Hạn chót",
+    "progressLabel": "Tiến độ dự án {name}",
+    "taskCount": "{done}/{total}"
+  },
+  "aiUsage": {
+    "description": "Key hãng dán ở đây. Mỗi người nhận một mã nội bộ để hỏi AI trên VS Code hoặc Cursor. Cổng LLM chạy ở máy này, cổng 3100.",
+    "loading": "Đang tải trang quản lý AI…",
+    "statusTitle": "Trạng thái cổng",
+    "statusGateway": "Cổng hỏi AI: {origin}",
+    "statusVendors": "Claude: {claude} · Grok: {grok} · Gemini: {gemini}",
+    "vendorReady": "đã lưu {preview}",
+    "vendorMissing": "chưa có",
+    "vendorsTitle": "Key hãng",
+    "vendorsHint": "Chỉ người có quyền cài đặt mới dán được. Ô trống giữ key cũ.",
+    "vendorClaude": "Claude",
+    "vendorGrok": "Grok",
+    "vendorGemini": "Gemini",
+    "vendorEmptyKeeps": "Để trống nếu không đổi key này.",
+    "saveVendors": "Lưu key",
+    "vendorsSaved": "Đã lưu key hãng.",
+    "usersTitle": "Cấp mã cho người dùng",
+    "usersHint": "Mã đầy đủ chỉ hiện một lần. Sau đó bảng chỉ còn bản rút gọn.",
+    "userName": "Tên người",
+    "userNamePlaceholder": "Nguyễn Văn A",
+    "userBudget": "Trần USD",
+    "userBudgetHint": "0 nghĩa là không giới hạn.",
+    "createUser": "Tạo mã",
+    "userCreated": "Đã tạo mã. Copy ngay.",
+    "newKeyTitle": "Mã nội bộ — copy ngay",
+    "copyKey": "Copy mã",
+    "copied": "Đã copy.",
+    "usersEmpty": "Chưa có mã nào",
+    "usersEmptyHint": "Tạo mã cho từng người rồi đưa họ URL cổng 3100 và mã nội bộ.",
+    "usersTableLabel": "Danh sách mã nội bộ",
+    "colName": "Tên",
+    "colKey": "Mã",
+    "colSpend": "Đã dùng / trần",
+    "colActions": "Thao tác",
+    "colWhen": "Lúc",
+    "colModel": "Model",
+    "colTokens": "Token",
+    "colUsd": "USD",
+    "colStatus": "Kết quả",
+    "colTask": "Việc",
+    "spendValue": "{used} / {cap}",
+    "unlimited": "không trần",
+    "blocked": "đã khóa",
+    "block": "Khóa",
+    "unblock": "Mở khóa",
+    "editBudget": "Sửa trần",
+    "blockTitle": "Khóa mã này?",
+    "blockDescription": "{name} sẽ không hỏi được AI cho tới khi mở khóa.",
+    "unblockTitle": "Mở khóa mã này?",
+    "unblockDescription": "{name} sẽ hỏi AI lại được, trong hạn mức còn lại.",
+    "blockedToast": "Đã khóa mã.",
+    "unblockedToast": "Đã mở khóa mã.",
+    "budgetTitle": "Trần USD mới",
+    "budgetSaved": "Đã đổi trần.",
+    "logsTitle": "Nhật ký",
+    "logsHint": "Ước tính theo bảng giá gần đúng. Hóa đơn thật nằm ở Anthropic, xAI và Google.",
+    "logsEmpty": "Chưa có lượt hỏi nào",
+    "logsEmptyHint": "Khi người dùng hỏi AI qua cổng 3100, dòng sẽ hiện ở đây.",
+    "logsTableLabel": "Nhật ký sử dụng AI",
+    "logOk": "ok",
+    "logError": "lỗi",
+    "modelsTitle": "Gợi ý model",
+    "modelsHint": "Chọn trên menu của Cline, Continue hoặc Cursor Chat.",
+    "hint": {
+      "daily": "Feature hằng ngày",
+      "quick": "Hỏi nhanh, tóm tắt",
+      "grok": "Khi cần Grok"
+    },
+    "setupTitle": "Dev khai mã",
+    "setupHint": "Cùng một mã. Claude Code chỉ đi Claude; muốn ba nhà thì dùng Cline, Continue hoặc Cursor Chat.",
+    "setupClaude": "Claude Code (VS Code) — Settings JSON:",
+    "setupOpenai": "Cline / Continue: Base URL {origin}, API key = mã nội bộ, chọn model trên chat.",
+    "setupCursor": "Cursor Chat / Agent: OpenAI API Key = mã nội bộ, Override Base URL = {origin}. Cursor Tab và Ctrl+K không đi cổng này."
+  },
+  "accessDenied": {
+    "whoCanHelp": "Ai xử lý được việc này?",
+    "whoCanHelpHint": "Chủ sở hữu hoặc quản trị viên của không gian làm việc. Họ thao tác ở Comitor.Account, không phải trong ứng dụng này.",
+    "signOut": "Đăng nhập bằng tài khoản khác",
+    "NOT_A_MEMBER": {
+      "title": "Bạn chưa thuộc không gian làm việc nào",
+      "description": "Ứng dụng Công việc chạy bên trong một không gian làm việc. Xin quản trị viên mời bạn vào, hoặc tự tạo một không gian làm việc mới.",
+      "action": "Mở danh sách không gian làm việc"
+    },
+    "APP_NOT_ENABLED": {
+      "title": "Không gian làm việc chưa bật ứng dụng này",
+      "description": "{workspace} chưa thêm Công việc vào gói của mình. Quản trị viên bật nó trong phần Ứng dụng và gói.",
+      "action": "Mở phần Ứng dụng và gói"
+    },
+    "NO_SEAT": {
+      "title": "Bạn chưa được cấp chỗ ngồi",
+      "description": "{workspace} đã bật ứng dụng Công việc, nhưng chỗ ngồi được cấp cho từng người. Xin quản trị viên cấp cho bạn một chỗ.",
+      "action": "Xem chỗ ngồi ở Comitor.Account"
+    },
+    "APP_SUSPENDED": {
+      "title": "Ứng dụng đang tạm ngừng",
+      "description": "Gói của {workspace} quá hạn thanh toán nên ứng dụng Công việc bị tạm ngừng. Dữ liệu vẫn còn nguyên và trở lại ngay khi thanh toán được cập nhật.",
+      "action": "Cập nhật thanh toán"
+    }
+  },
+  "signedOut": {
+    "title": "Bạn đã thoát khỏi Công việc",
+    "description": "Phiên của ứng dụng này đã kết thúc và token truy cập đã bị thu hồi.",
+    "signInAgain": "Đăng nhập lại",
+    "stillSignedIn": "Bạn vẫn đang đăng nhập ở Comitor.Account",
+    "stillSignedInHint": "Nghĩa là các sản phẩm Comitor khác vẫn mở, và bấm “Đăng nhập lại” sẽ vào thẳng mà không phải gõ mật khẩu. Trên máy dùng chung thì đó chưa phải là thoát — phiên này đã đóng nên phải sang Account để đóng nốt phần còn lại.",
+    "signOutEverywhere": "Quản lý phiên ở Comitor.Account",
+    "everywhereTitle": "Đã thoát khỏi mọi sản phẩm Comitor",
+    "everywhereHint": "Phiên tại Comitor.Account cũng đã đóng, nên lần đăng nhập tới sẽ phải gõ mật khẩu. Các sản phẩm Comitor khác đang mở trên máy này cũng đã thoát."
+  },
+  "signInFailed": {
+    "title": "Không đăng nhập được",
+    "description": "Luồng đăng nhập chưa hoàn tất. Thường là vì liên kết đăng nhập đã được dùng một lần rồi, hoặc đã quá hạn — mở lại nó bằng nút Quay lại hay F5 là rơi vào đúng trường hợp này.",
+    "tryAgain": "Thử đăng nhập lại",
+    "stillFailing": "Thử lại vẫn không vào được?",
+    "stillFailingHint": "Nghĩa là trục trặc không nằm ở liên kết. Mở Comitor.Account để kiểm tra tài khoản; nếu ở đó vẫn đăng nhập bình thường thì đây là lỗi cấu hình của ứng dụng — báo cho người quản trị, đừng thử lại thêm.",
+    "openAccount": "Mở Comitor.Account"
+  }
+}

@@ -1,0 +1,838 @@
+{
+  "app": {
+    "name": "Comitor AI Usage",
+    "description": "Manage vendor keys, issue internal tokens, and track AI usage in a workspace."
+  },
+  "common": {
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "clearSelection": "Clear selection",
+    "clearAllSelections": "Clear all selections",
+    "close": "Close",
+    "delete": "Delete",
+    "create": "Create",
+    "edit": "Edit",
+    "retry": "Try again",
+    "viewAll": "View all",
+    "discard": "Discard changes",
+    "required": "Required",
+    "none": "None",
+    "unassigned": "Unassigned",
+    "formerMember": "Former member",
+    "notConnected": "Backend not connected",
+    "notConnectedHint": "This action is not wired to the server in the starter yet."
+  },
+  "nav": {
+    "overview": "Overview",
+    "tasks": "Tasks",
+    "projects": "Projects",
+    "taskNew": "New task",
+    "settings": "Settings",
+    "settingsGeneral": "General",
+    "settingsNotifications": "Notifications",
+    "settingsPermissions": "Permissions",
+    "settingsAdvanced": "Advanced",
+    "aiUsage": "AI usage"
+  },
+  "shell": {
+    "accountTitle": "This belongs to Comitor.Account",
+    "openAccount": "Open Comitor.Account",
+    "otherAppTitle": "“{name}” is a separate product",
+    "otherAppDescription": "Each Comitor product runs on its own domain.",
+    "upsellTitle": "“{name}” is not in your current plan",
+    "upsellDescription": "Ask an administrator to enable this application for the workspace.",
+    "noSeatTitle": "You don’t have a seat in {name}",
+    "noSeatDescription": "This workspace has the app enabled, but you haven’t been given a seat. Ask an admin to assign you one in Comitor Account.",
+    "slogan": "AI Usage",
+    "skipToContent": "Skip to main content",
+    "signOutEverywhere": "Sign out everywhere"
+  },
+  "roles": {
+    "owner": {
+      "label": "Owner",
+      "short": "Owner",
+      "description": "Created the workspace. Always holds every permission in every application."
+    },
+    "admin": {
+      "label": "Admin",
+      "short": "Admin",
+      "description": "Manages members, plan and workspace settings."
+    },
+    "member": {
+      "label": "Member",
+      "short": "Member",
+      "description": "Works in the workspace day to day."
+    },
+    "guest": {
+      "label": "Guest",
+      "short": "Guest",
+      "description": "An outsider invited to view what is shared with them directly."
+    }
+  },
+  "task": {
+    "status": {
+      "todo": {
+        "label": "To do",
+        "short": "TD"
+      },
+      "in-progress": {
+        "label": "In progress",
+        "short": "IP"
+      },
+      "in-review": {
+        "label": "In review",
+        "short": "IR"
+      },
+      "done": {
+        "label": "Done",
+        "short": "DN"
+      },
+      "overdue": {
+        "label": "Overdue",
+        "short": "OD"
+      }
+    },
+    "priority": {
+      "low": {
+        "label": "Low",
+        "short": "L"
+      },
+      "medium": {
+        "label": "Medium",
+        "short": "M"
+      },
+      "high": {
+        "label": "High",
+        "short": "H"
+      },
+      "urgent": {
+        "label": "Urgent",
+        "short": "U"
+      }
+    },
+    "requestType": {
+      "task": {
+        "label": "Regular task",
+        "description": "Planned work inside a project, handled in priority order."
+      },
+      "incident": {
+        "label": "Incident",
+        "description": "Something is broken for users and needs to jump the queue."
+      },
+      "improvement": {
+        "label": "Improvement",
+        "description": "A proposal to improve experience or performance, scheduled for a later cycle."
+      },
+      "external": {
+        "label": "Hand to a partner",
+        "description": "Assign the work to someone outside the workspace."
+      }
+    },
+    "field": {
+      "code": "Code",
+      "title": "Title",
+      "summary": "Description",
+      "project": "Project",
+      "assignee": "Assignee",
+      "watchers": "Watchers",
+      "status": "Status",
+      "priority": "Priority",
+      "dueDate": "Due",
+      "updatedAt": "Updated",
+      "estimate": "Estimate",
+      "attachment": "Attachment"
+    },
+    "hourUnit": "h",
+    "unit": "tasks"
+  },
+  "project": {
+    "status": {
+      "active": {
+        "label": "Active",
+        "short": "AC"
+      },
+      "on-hold": {
+        "label": "On hold",
+        "short": "OH"
+      },
+      "completed": {
+        "label": "Closed",
+        "short": "CL"
+      }
+    }
+  },
+  "activity": {
+    "kind": {
+      "created": "Created",
+      "assigned": "Assigned",
+      "updated": "Updated",
+      "review-requested": "In review",
+      "completed": "Completed",
+      "overdue": "Overdue",
+      "deleted": "Deleted"
+    },
+    "sentence": {
+      "created": "created the task",
+      "assigned": "assigned it to {target}",
+      "updated": "updated it",
+      "review-requested": "sent it for review",
+      "completed": "completed it",
+      "overdue": "missed the due date",
+      "deleted": "deleted the task"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "unreadCount": "{count} unread",
+    "kind": {
+      "mention": "Mention",
+      "assignment": "Assignment",
+      "deadline": "Due date",
+      "system": "System"
+    },
+    "sentence": {
+      "mention": "{actor} mentioned you in {code} · {title}",
+      "assignment": "You were assigned {code} · {title}",
+      "deadline": "{code} · {title} is due soon",
+      "system": "System update"
+    }
+  },
+  "errors": {
+    "unexpected": "Something went wrong. Try again in a few minutes.",
+    "rateLimited": "Too many attempts. Wait a moment and try again.",
+    "UNAUTHORIZED": "You need to sign in to use this.",
+    "FORBIDDEN": "You do not have permission to do this.",
+    "NOT_FOUND": "Not found.",
+    "VALIDATION_ERROR": "The data sent is not valid.",
+    "RATE_LIMITED": "Too many attempts. Wait a moment and try again.",
+    "INTERNAL_ERROR": "The server hit a problem. Try again in a few minutes.",
+    "SERVICE_UNAVAILABLE": "This feature is not configured yet. Tell an admin of your workspace.",
+    "NETWORK_ERROR": "Could not reach the server. Check your connection.",
+    "TASK_NOT_FOUND": "That task no longer exists.",
+    "TASK_CODE_TAKEN": "Someone just took that task code. Try again.",
+    "PROJECT_NOT_FOUND": "That project no longer exists.",
+    "PROJECT_CLOSED": "The project is closed and cannot take new tasks.",
+    "ASSIGNEE_NOT_IN_WORKSPACE": "That person is no longer in the workspace.",
+    "ATTACHMENT_EMPTY": "The file is empty.",
+    "ATTACHMENT_TYPE_INVALID": "Only PNG, JPEG or WebP images are accepted.",
+    "ATTACHMENT_TOO_LARGE": "The image is larger than 2 MB.",
+    "STORAGE_NOT_CONFIGURED": "Object storage is not configured, so attachments are unavailable.",
+    "boundary": {
+      "title": "This page failed to load",
+      "description": "Try again; if it keeps failing, tell an admin of your workspace.",
+      "descriptionWithDigest": "Try again; if it keeps failing, tell an admin and include incident code {digest}.",
+      "retry": "Try again"
+    },
+    "STALE_WRITE": "Someone else just changed this. Reload the page to see their version before saving."
+  },
+  "commandPalette": {
+    "placeholder": "Search pages, tasks or commands…",
+    "empty": "No matching results.",
+    "footer": "↑ ↓ to move · Enter to open · Esc to close",
+    "navigationGroup": "Navigation",
+    "actionsGroup": "Actions",
+    "tasksGroup": "Tasks",
+    "tasksTruncated": "Tasks · {shown}/{total, plural, one {# result} other {# results}}",
+    "accountDescription": "Members, roles and personal profile",
+    "accountKeywords": "members, member, invite, role, profile, account",
+    "themeDescription": "Appearance",
+    "themeToDark": "Switch to dark mode",
+    "themeToLight": "Switch to light mode",
+    "themeKeywords": "theme, appearance, mode, dark, light"
+  },
+  "edges": {
+    "backHome": "Back to overview",
+    "error": {
+      "title": "Something went wrong",
+      "description": "This page failed to load. Try again; if it keeps failing, tell an admin of your workspace.",
+      "digest": "Incident code: {digest}"
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "The address you opened does not exist or has changed. Check the link, or go back to the overview."
+    },
+    "loading": {
+      "overview": "Loading content…",
+      "tasks": "Loading the task list…"
+    }
+  },
+  "overview": {
+    "openTaskBoard": "Task board",
+    "statsLabel": "Key metrics",
+    "stats": {
+      "open": "Open tasks",
+      "done": "Completed",
+      "overdue": "Overdue",
+      "averageProgress": "Average progress"
+    },
+    "chart": {
+      "title": "Tasks by project",
+      "description": "Open and completed tasks in each project.",
+      "open": "Open",
+      "done": "Completed",
+      "ariaLabel": "Bar chart: the horizontal axis is the project code, the vertical axis is the number of tasks; each bar is split into an open part and a completed part.",
+      "empty": "No project to chart yet."
+    },
+    "feed": {
+      "title": "Recent activity",
+      "description": "The latest changes across the team's work.",
+      "empty": "No activity has been recorded yet."
+    },
+    "projects": {
+      "title": "Active projects",
+      "description": "{count, plural, one {# project has open work.} other {# projects have open work.}}",
+      "empty": "No project is running right now.",
+      "progressLabel": "Progress of project {name}",
+      "teamLabel": "Members of project {name}",
+      "meta": "{count, plural, one {# task} other {# tasks}} · due {date}"
+    },
+    "myTasks": {
+      "title": "Assigned to you",
+      "description": "Open tasks where you are the assignee.",
+      "emptyTitle": "Nothing assigned yet",
+      "emptyDescription": "Tasks assigned to you will show up here.",
+      "emptyAction": "See the team's work"
+    }
+  },
+  "settings": {
+    "headerDescription": "Options and permissions for the Starter application, applied across the workspace. Workspaces, members and personal profiles are managed by Comitor.Account.",
+    "tabsLabel": "Settings sections",
+    "loading": "Loading settings…",
+    "draft": {
+      "dirty": "Unsaved changes — press <kbd>mod+s</kbd> to save.",
+      "clean": "Everything is saved.",
+      "savedTitle": "Settings saved",
+      "savedDescription": "The change now applies to this workspace.",
+      "undo": "Undo",
+      "undoneTitle": "Change undone",
+      "failedTitle": "Could not save the settings"
+    },
+    "general": {
+      "taskTitle": "Tasks",
+      "taskDescription": "Defaults for the task table and the task form, applied across the workspace.",
+      "taskHelpLabel": "About these defaults",
+      "taskHelp": "These are pre-filled values, not limits: everyone can still change them on a single task or on a single visit to the table.",
+      "defaultPriorityLabel": "Default priority",
+      "defaultPriorityDescription": "Pre-filled in the new task form; the author can still change it.",
+      "pageSizeLabel": "Default rows per page",
+      "pageSizeDescription": "Page size when the task table opens, applied across the workspace. Anyone can still change it on the table.",
+      "pageSizeOption": "{count} rows",
+      "autoAssignLabel": "Pre-select the author as assignee",
+      "autoAssignDescription": "Applies to everyone in the workspace. The author can still change it before submitting.",
+      "appearanceTitle": "Appearance",
+      "appearanceDescription": "Applies to you only, on this device.",
+      "themeLabel": "Light / dark mode",
+      "themeDescription": "Follow the operating system, or pin one mode. Your choice is remembered.",
+      "contrastLabel": "High contrast",
+      "contrastDescription": "A contrast-measured palette, for bright screens or tired eyes.",
+      "densityLabel": "Compact layout",
+      "densityDescription": "Reduce the vertical spacing between rows in tables, lists and menus.",
+      "fontSizeLabel": "Text size",
+      "fontSizeDescription": "Scale the whole interface up or down, icons and spacing included.",
+      "fontSizeOption": {
+        "sm": "Small",
+        "md": "Medium",
+        "lg": "Large"
+      },
+      "languageLabel": "Display language",
+      "languageDescription": "The language of the whole interface on this device. It starts from your Comitor.Account profile and follows changes there until you pick something here.",
+      "shortcutsTitle": "Keyboard shortcuts",
+      "shortcutsDescription": "Symbols follow the operating system you are on.",
+      "shortcut": {
+        "command-palette": "Open the command palette",
+        "app-launcher": "Open the application list",
+        "toggle-sidebar": "Collapse / expand the sidebar",
+        "save-settings": "Save changes on the settings page"
+      }
+    },
+    "notifications": {
+      "title": "Workspace notifications",
+      "description": "Whether these Starter application events may be sent at all. Applies to everyone in the workspace — the address they are sent to is yours alone, and it lives in your Comitor.Account profile.",
+      "pref": {
+        "assigned": {
+          "label": "When a task is assigned",
+          "description": "Sent as soon as someone assigns a new task or changes the assignee."
+        },
+        "due-soon": {
+          "label": "Before a due date",
+          "description": "One day before the due date, to the assignee of tasks that asked for a reminder."
+        },
+        "email-digest": {
+          "label": "Group everything into an email digest",
+          "description": "A single email instead of many separate notifications."
+        }
+      },
+      "digestLabel": "Send the digest",
+      "digestDescription": "The digest groups every change in the period into one email.",
+      "digestDisabledDescription": "This opens up once “Group everything into an email digest” above is on.",
+      "digest": {
+        "daily": "Every morning, 08:00",
+        "weekly": "Start of the week, Monday morning",
+        "friday": "End of the week, Friday afternoon"
+      }
+    },
+    "permissions": {
+      "accountTitle": "Roles come from Comitor.Account",
+      "accountBody": "The four roles below belong to the {workspace} workspace and are granted by Comitor.Account — this application only reads them. The table below decides what each role can do <strong>inside the application</strong>; it cannot change anyone's role.",
+      "membersLink": "Manage members and roles in Comitor.Account",
+      "newTab": "(opens a new tab)",
+      "readOnlyTitle": "You can only view this table",
+      "readOnlyDescription": "Editing permissions requires the “Change permissions” permission. The table still shows what each role can do inside the application.",
+      "sectionTitle": "Permissions by feature",
+      "sectionDescription": "A checked cell means the role in that column can do the thing in that row.",
+      "helpLabel": "About the locked cells",
+      "help": "Two cells never change: the owner always has every permission (removing it locks you out of your own workspace), and a guest never gets a write permission. Hiding a button is not a permission check — the real one runs on the server and reads this very table.",
+      "featureColumn": "Feature",
+      "grantedCount": "{granted}/{total}",
+      "granted": "Granted",
+      "notGranted": "Not granted",
+      "yourRole": "Your role",
+      "lock": {
+        "always": {
+          "label": "Always granted",
+          "reason": "The owner always has every permission in the application. Removing one would lock you out of your own workspace."
+        },
+        "never": {
+          "label": "Cannot be granted",
+          "reason": "A guest is someone outside the organisation, so they can only read. Write actions cannot be granted to this role."
+        }
+      },
+      "group": {
+        "tasks": "Tasks",
+        "projects": "Projects",
+        "reports": "Reports",
+        "app": "Application administration"
+      },
+      "item": {
+        "task_view": {
+          "label": "View tasks",
+          "description": "Open the task table and read the detail of a task."
+        },
+        "task_create": {
+          "label": "Create tasks",
+          "description": "Open the form and create a new task in the workspace."
+        },
+        "task_edit": {
+          "label": "Edit tasks",
+          "description": "Change the title, description, status, due date and estimate."
+        },
+        "task_assign": {
+          "label": "Assign tasks to others",
+          "description": "Change the assignee of an existing task."
+        },
+        "task_delete": {
+          "label": "Delete tasks",
+          "description": "Permanently delete a task, including bulk deletion from the table."
+        },
+        "project_view": {
+          "label": "View projects",
+          "description": "See the project list and the progress of each project."
+        },
+        "project_create": {
+          "label": "Create projects",
+          "description": "Open a new project and set its owner."
+        },
+        "report_view": {
+          "label": "View reports",
+          "description": "The summary figures on Overview and the tasks-per-project chart."
+        },
+        "report_export": {
+          "label": "Export data",
+          "description": "Download the filtered set of tasks as a CSV file."
+        },
+        "app_settings": {
+          "label": "Change application settings",
+          "description": "The General, Notifications and Advanced tabs of this page."
+        },
+        "app_permissions": {
+          "label": "Change permissions",
+          "description": "This table itself — who may edit what other people can do in the application."
+        }
+      }
+    },
+    "advanced": {
+      "dataTitle": "Application data",
+      "dataDescription": "Applies to every task and project this application keeps for the workspace.",
+      "helpLabel": "About the scope",
+      "help": "These switches only touch the data of the Tasks application. Workspace-wide policy — two-factor authentication, who may invite people — lives in Comitor.Account.",
+      "data": {
+        "public-link": {
+          "label": "Allow public links to a task",
+          "description": "Anyone with the link can read one task without signing in."
+        },
+        "activity-log": {
+          "label": "Keep a change log for tasks",
+          "description": "Record who changed what and when — the source of Recent activity on Overview."
+        }
+      },
+      "archiveLabel": "Auto-archive completed tasks after",
+      "archiveDescription": "Archived tasks stay searchable, they just leave the default table.",
+      "archive": {
+        "30d": "30 days",
+        "90d": "90 days",
+        "180d": "180 days",
+        "never": "Never archive"
+      },
+      "dangerTitle": "Danger zone",
+      "dangerDescription": "Nothing in this group can be undone.",
+      "resetTitle": "Delete the application data",
+      "resetDescription": "Permanently delete {tasks, plural, one {# task} other {# tasks}} and {projects, plural, one {# project} other {# projects}}, plus every attachment the Tasks application keeps in this workspace. The workspace, its members and the other applications are untouched.",
+      "resetButton": "Delete application data",
+      "dialogTitle": "Delete the application data?",
+      "dialogDescription": "Every task, project and attachment the Tasks application keeps for <strong>{workspace}</strong> will be deleted permanently. There is no backup and no undo. The workspace and its members stay untouched in Comitor.Account.",
+      "confirmLabel": "Delete permanently",
+      "cancelLabel": "Keep the data",
+      "confirmHint": "Type <code>{slug}</code> to unlock the delete button"
+    },
+    "readOnly": {
+      "title": "This page is read-only for you",
+      "description": "Your role in this workspace cannot change application settings. Ask an owner or an admin to make the change."
+    },
+    "notYetActive": "This value is saved but <strong>nothing reads it yet</strong> — this sample module has no background job for it."
+  },
+  "taskNew": {
+    "description": "Fill in the details to open a new task in this workspace.",
+    "directoryUnavailableTitle": "The member directory is not available",
+    "directoryUnavailableDescription": "The machine-to-machine connection to Comitor.Account is not configured, so the list of people in this workspace cannot be read. The “Assignee” field will be empty and submitting the form will be rejected. Set COMITOR_M2M_CLIENT_ID and COMITOR_M2M_CLIENT_SECRET in .env, then restart the server.",
+    "sectionContentTitle": "Task content",
+    "sectionContentDescription": "The part everyone reads first, in the list and in notifications.",
+    "sectionAssignmentTitle": "Assignment & schedule",
+    "sectionAssignmentDescription": "Who does it, who follows along, and when it is due.",
+    "sectionApprovalTitle": "Approval & notifications",
+    "sectionApprovalDescription": "Who has to agree first, and how everyone hears about it.",
+    "codeDescription": "Assigned automatically once the task is created.",
+    "titleDescription": "One sentence describing the work, starting with a verb.",
+    "titlePlaceholder": "For example: Review the form's error messages",
+    "summaryDescription": "Updates with every change in the form beside it.",
+    "summaryPlaceholder": "What problem does this solve? How will you know it is done?",
+    "requestTypeLabel": "Request type",
+    "requestTypeDescription": "Decides which queue the work joins.",
+    "externalDisabledReason": "This workspace has external sharing turned off. Turn it on in Settings → Advanced.",
+    "attachmentAfterCreate": "Images are attached after the task exists — a separate step, so a flaky network can be retried without creating a duplicate task.",
+    "projectDescription": "Type the project code or name.",
+    "projectPlaceholder": "Pick a project",
+    "projectSearchPlaceholder": "Search by project name or code…",
+    "projectEmpty": "No project matches.",
+    "assigneeDescription": "Exactly one person is accountable.",
+    "assigneePlaceholder": "Pick an assignee",
+    "memberSearchPlaceholder": "Search by name or email…",
+    "memberEmpty": "No member found.",
+    "watchersDescription": "They get notified but are not accountable for finishing it.",
+    "watchersPlaceholder": "Add watchers",
+    "watchersSelected": "{selected} of {max} selected",
+    "watchersOverflow": "See all {count} watchers",
+    "priorityDescription": "Decides the order in the queue.",
+    "priorityPlaceholder": "Pick a priority",
+    "dueDateDescription": "Type a date or use the calendar button.",
+    "estimateDescription": "Working hours, at most {max} hours for one task.",
+    "approvalToggleLabel": "Needs approval before it is assigned",
+    "approvalToggleDescription": "The task waits in review until an approver agrees.",
+    "approvalFlowLabel": "Approval flow",
+    "approvalFlowHint": "Approvers are notified as soon as the task is created.",
+    "approvalFlowDisabledHint": "Turn on “Needs approval before it is assigned” to pick a flow.",
+    "approvalFlowPlaceholder": "Pick a flow",
+    "approvalFlowNone": "— Not selected —",
+    "flow": {
+      "team-lead": {
+        "label": "Team lead approves",
+        "steps": "One step: the assignee's team lead."
+      },
+      "two-level": {
+        "label": "Two-level approval",
+        "steps": "Two steps: team lead, then department head."
+      },
+      "product-board": {
+        "label": "Product board",
+        "steps": "Reviewed at the board meeting every Tuesday."
+      }
+    },
+    "channelsLabel": "Notification channels",
+    "channelsDescription": "Applies to the assignee and to the watchers.",
+    "channelNotDeliveredYet": "Your choice is saved, but this channel cannot deliver yet — nothing is sent through it.",
+    "channel": {
+      "in-app": {
+        "label": "In the app",
+        "description": "Shows up in the notification bell in the header."
+      },
+      "email": {
+        "label": "Email",
+        "description": "Sent to the verified address in the Comitor.Account profile."
+      },
+      "chat": {
+        "label": "Chat",
+        "description": "Posted to the project channel in the Chat app."
+      },
+      "sms": {
+        "label": "SMS",
+        "description": "For urgent work only — text messages are billed."
+      }
+    },
+    "remindLabel": "Remind one day before the deadline",
+    "remindDescription": "Sends a reminder at 9am the day before it is due.",
+    "calendarLabel": "Add to the assignee's calendar",
+    "calendarDescription": "Creates an all-day event on the due date.",
+    "errorSummaryTitle": "{count, plural, one {# item still needs attention} other {# items still need attention}}",
+    "errorSummaryHint": "The fields marked below are missing or not valid yet.",
+    "errorTitleRequired": "Enter a task title.",
+    "errorTitleShort": "The title needs at least {min} characters so teammates know what to do.",
+    "errorProjectRequired": "Pick the project this task belongs to.",
+    "errorAssigneeRequired": "Pick an assignee — nobody picks up a task with no owner.",
+    "errorDueDateRequired": "Pick a deadline for this task.",
+    "errorDueDatePast": "That deadline has passed. Pick a date from today onwards.",
+    "errorEstimateRequired": "Enter a time estimate.",
+    "errorEstimateRange": "The estimate must be between {min} and {max} hours. Split anything bigger.",
+    "errorApprovalFlowRequired": "Pick an approval flow, or turn approval off.",
+    "errorChannelsRequired": "Pick at least one channel to notify the assignee.",
+    "draftTitle": "Draft",
+    "draftSavedAgo": "Last saved <when>just now</when>.",
+    "draftFilledIn": "Its content has been filled back into the form below.",
+    "draftHint": "Save a draft to come back and finish later.",
+    "restoreDraft": "Restore the draft",
+    "saveDraft": "Save draft",
+    "savingDraft": "Saving draft…",
+    "draftSavedTitle": "Draft saved",
+    "draftSavedDescription": "The draft is visible only to you, in this workspace.",
+    "draftRestoredTitle": "Draft restored",
+    "draftRestoredDescription": "The form is back to exactly what was saved.",
+    "submit": "Create task",
+    "submitting": "Creating…",
+    "createdTitle": "Task created",
+    "createdDescription": "{code} · {title}",
+    "summaryTitle": "Summary",
+    "empty": "Not set",
+    "estimateValue": "{hours} {unit}",
+    "approvalSummaryLabel": "Approval",
+    "approvalNotNeeded": "No approval needed",
+    "noProjectTitle": "No projects yet",
+    "noProjectDescription": "Every task belongs to a project. Create the first one, then come back here.",
+    "noProjectAction": "Go to Projects"
+  },
+  "taskDetail": {
+    "project": "Project",
+    "assignee": "Assignee",
+    "due": "Due",
+    "estimate": "Estimate",
+    "attachment": "Attachment",
+    "titleAria": "Edit task title",
+    "summaryAria": "Edit task description",
+    "summaryPlaceholder": "Add a description…",
+    "savedToast": "Saved.",
+    "properties": "Properties",
+    "updated": "Updated",
+    "assignedToast": "Assignee changed.",
+    "completedToast": "Marked as done.",
+    "deletedToast": "{code} deleted.",
+    "attachmentChoose": "Choose image",
+    "attachmentUploading": "Uploading…",
+    "attachmentRemove": "Remove",
+    "attachmentHint": "PNG, JPG or WebP, up to 2 MB. You can also drop a file here.",
+    "attachmentDrop": "Drop to upload",
+    "attachmentFailed": "The file could not be uploaded.",
+    "attachmentSaved": "Attachment saved.",
+    "attachmentRemoved": "Attachment removed."
+  },
+  "tasks": {
+    "title": "Tasks",
+    "description": "Every task in this workspace — filter, sort and act in bulk.",
+    "newTask": "New task",
+    "tableLabel": "Task list",
+    "searchPlaceholder": "Search by code, task, project or assignee…",
+    "filter": {
+      "project": "All projects",
+      "projectSearch": "Find a project…",
+      "projectEmpty": "No project matches.",
+      "projectLabel": "Filter by project",
+      "priority": "All priorities",
+      "prioritySearch": "Find a priority…",
+      "priorityEmpty": "No priority matches.",
+      "priorityLabel": "Filter by priority",
+      "assignee": "All assignees",
+      "assigneeSearch": "Find a member…",
+      "assigneeEmpty": "No member matches.",
+      "assigneeSelected": "{selected} of {max} selected",
+      "assigneeLabel": "Filter by assignee",
+      "statusLabel": "Quick filter by status",
+      "statusAll": "All"
+    },
+    "column": {
+      "actions": "Actions"
+    },
+    "row": {
+      "actions": "Actions for task {code}",
+      "select": "Select task {code}",
+      "deselect": "Deselect task {code}",
+      "open": "Open task {code}",
+      "due": "Due {date}"
+    },
+    "action": {
+      "edit": "Edit task",
+      "assign": "Change assignee",
+      "complete": "Mark as done",
+      "delete": "Delete task",
+      "export": "Export list"
+    },
+    "bulk": {
+      "selected": "{count, plural, one {# task selected} other {# tasks selected}}",
+      "clear": "Clear selection",
+      "deleteTitle": "{count, plural, one {Delete the selected task?} other {Delete the # selected tasks?}}",
+      "deleteDescription": "Deleted tasks cannot be restored, including the comments and attachments inside them."
+    },
+    "delete": {
+      "title": "Delete task {code}?",
+      "description": "“{title}” will be removed from its project. This cannot be undone."
+    },
+    "empty": {
+      "title": "No tasks yet",
+      "description": "Create the first task to start tracking project progress.",
+      "action": "Create task",
+      "filteredTitle": "No task matches",
+      "filteredDescription": "Try removing some filters or clearing the search box.",
+      "filteredAction": "Clear filters"
+    },
+    "exportFileName": "tasks.csv",
+    "toast": {
+      "completed": "{code} marked as done.",
+      "deleted": "{code} deleted.",
+      "completedMany": "{count, plural, one {# task marked as done.} other {# tasks marked as done.}}",
+      "deletedMany": "{count, plural, one {# task deleted.} other {# tasks deleted.}}",
+      "assignedMany": "{count, plural, one {# task assigned.} other {# tasks assigned.}}"
+    }
+  },
+  "projects": {
+    "description": "Group work by goal. Progress is COUNTED from tasks, not stored as a column.",
+    "create": "New project",
+    "createdToast": "Project {code} created.",
+    "emptyTitle": "No projects yet",
+    "emptyDescription": "Every task belongs to a project, so create the first project before opening the first task.",
+    "emptyDescriptionReadOnly": "Your role cannot create projects. Ask an owner or an admin to create one.",
+    "nameLabel": "Project name",
+    "namePlaceholder": "For example: Shared platform",
+    "ownerLabel": "Owner",
+    "ownerSearch": "Find a member…",
+    "ownerEmpty": "No one found.",
+    "dueLabel": "Due",
+    "progressLabel": "Progress of project {name}",
+    "taskCount": "{done}/{total}"
+  },
+  "aiUsage": {
+    "description": "Paste vendor keys here. Each person gets one internal key to call AI from VS Code or Cursor. The LLM gateway runs on this machine, port 3100.",
+    "loading": "Loading AI usage…",
+    "statusTitle": "Gateway status",
+    "statusGateway": "LLM gateway: {origin}",
+    "statusVendors": "Claude: {claude} · Grok: {grok} · Gemini: {gemini}",
+    "vendorReady": "saved {preview}",
+    "vendorMissing": "missing",
+    "vendorsTitle": "Vendor keys",
+    "vendorsHint": "Only people with settings access can paste keys. Leave a field empty to keep the current key.",
+    "vendorClaude": "Claude",
+    "vendorGrok": "Grok",
+    "vendorGemini": "Gemini",
+    "vendorEmptyKeeps": "Leave empty to keep this key unchanged.",
+    "saveVendors": "Save keys",
+    "vendorsSaved": "Vendor keys saved.",
+    "usersTitle": "Issue a key",
+    "usersHint": "The full key is shown once. After that the table only shows a preview.",
+    "userName": "Name",
+    "userNamePlaceholder": "Alex Nguyen",
+    "userBudget": "USD cap",
+    "userBudgetHint": "0 means no cap.",
+    "createUser": "Create key",
+    "userCreated": "Key created. Copy it now.",
+    "newKeyTitle": "Internal key — copy it now",
+    "copyKey": "Copy key",
+    "copied": "Copied.",
+    "usersEmpty": "No keys yet",
+    "usersEmptyHint": "Create a key for each person, then give them the port 3100 URL and the internal key.",
+    "usersTableLabel": "Internal keys",
+    "colName": "Name",
+    "colKey": "Key",
+    "colSpend": "Spent / cap",
+    "colActions": "Actions",
+    "colWhen": "When",
+    "colModel": "Model",
+    "colTokens": "Tokens",
+    "colUsd": "USD",
+    "colStatus": "Result",
+    "colTask": "Work",
+    "spendValue": "{used} / {cap}",
+    "unlimited": "unlimited",
+    "blocked": "blocked",
+    "block": "Block",
+    "unblock": "Unblock",
+    "editBudget": "Edit cap",
+    "blockTitle": "Block this key?",
+    "blockDescription": "{name} will not be able to call AI until the key is unblocked.",
+    "unblockTitle": "Unblock this key?",
+    "unblockDescription": "{name} will be able to call AI again, within the remaining cap.",
+    "blockedToast": "Key blocked.",
+    "unblockedToast": "Key unblocked.",
+    "budgetTitle": "New USD cap",
+    "budgetSaved": "Cap updated.",
+    "logsTitle": "Usage log",
+    "logsHint": "Estimates from a rough price table. The real invoice is at Anthropic, xAI and Google.",
+    "logsEmpty": "No requests yet",
+    "logsEmptyHint": "When someone calls AI through port 3100, rows show up here.",
+    "logsTableLabel": "AI usage log",
+    "logOk": "ok",
+    "logError": "error",
+    "modelsTitle": "Model hints",
+    "modelsHint": "Pick these in the Cline, Continue or Cursor Chat model menu.",
+    "hint": {
+      "daily": "Day-to-day feature work",
+      "quick": "Quick questions, summaries",
+      "grok": "When you need Grok"
+    },
+    "setupTitle": "How developers set the key",
+    "setupHint": "One key for all of it. Claude Code is Claude only; for three vendors use Cline, Continue or Cursor Chat.",
+    "setupClaude": "Claude Code (VS Code) — Settings JSON:",
+    "setupOpenai": "Cline / Continue: Base URL {origin}, API key = internal key, pick the model in chat.",
+    "setupCursor": "Cursor Chat / Agent: OpenAI API Key = internal key, Override Base URL = {origin}. Cursor Tab and Ctrl+K do not go through this gateway."
+  },
+  "accessDenied": {
+    "whoCanHelp": "Who can fix this?",
+    "whoCanHelpHint": "An owner or admin of the workspace. They do it in Comitor.Account, not in this application.",
+    "signOut": "Sign in with a different account",
+    "NOT_A_MEMBER": {
+      "title": "You are not in any workspace yet",
+      "description": "Tasks runs inside a workspace. Ask an administrator to invite you, or create a workspace of your own.",
+      "action": "Open your workspaces"
+    },
+    "APP_NOT_ENABLED": {
+      "title": "This workspace has not enabled Tasks",
+      "description": "{workspace} has not added Tasks to its plan. An administrator can enable it under Applications and plan.",
+      "action": "Open Applications and plan"
+    },
+    "NO_SEAT": {
+      "title": "You do not have a seat yet",
+      "description": "{workspace} has Tasks enabled, but seats are granted per person. Ask an administrator to give you one.",
+      "action": "View seats in Comitor.Account"
+    },
+    "APP_SUSPENDED": {
+      "title": "Tasks is suspended",
+      "description": "The plan for {workspace} is past due, so Tasks is suspended. Your data is intact and comes back as soon as billing is updated.",
+      "action": "Update billing"
+    }
+  },
+  "signedOut": {
+    "title": "You have signed out of Tasks",
+    "description": "This application's session has ended and its access token was revoked.",
+    "signInAgain": "Sign in again",
+    "stillSignedIn": "You are still signed in to Comitor.Account",
+    "stillSignedInHint": "It means other Comitor products are still open, and “Sign in again” will go straight through without a password. On a shared computer that is not really signing out — this session is already closed, so finish the job in Account.",
+    "signOutEverywhere": "Manage sessions in Comitor.Account",
+    "everywhereTitle": "Signed out of every Comitor product",
+    "everywhereHint": "The Comitor.Account session is closed too, so the next sign-in will ask for a password. Other Comitor products open on this computer are signed out as well."
+  },
+  "signInFailed": {
+    "title": "Could not sign you in",
+    "description": "The sign-in flow did not complete. Usually the sign-in link had already been used once, or it expired — reopening it with Back or F5 lands exactly here.",
+    "tryAgain": "Try signing in again",
+    "stillFailing": "Still cannot get in?",
+    "stillFailingHint": "Then the trouble is not the link. Open Comitor.Account and check your account; if signing in works there, this is an application configuration error — tell an administrator rather than retrying.",
+    "openAccount": "Open Comitor.Account"
+  }
+}

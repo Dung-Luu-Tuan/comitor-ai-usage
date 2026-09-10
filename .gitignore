@@ -1,0 +1,76 @@
+# Phụ thuộc
+node_modules/
+.pnp
+.pnp.*
+
+# Kết quả build của Next
+.next/
+out/
+build/
+next-env.d.ts
+
+# Nhật ký & bộ nhớ đệm
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.turbo/
+*.tsbuildinfo
+
+# Biến môi trường
+.env
+.env.*
+!.env.example
+
+# Hệ điều hành / trình soạn thảo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Kiểm thử
+coverage/
+
+# Route nháp / thăm dò trong app/
+#
+# Next bỏ qua mọi thư mục bắt đầu bằng "_" (private folder) nên nó KHÔNG sinh route — đây là chỗ
+# an toàn để dựng một trang thử rồi quên xoá. Quy ước: mọi thứ tạm trong app/ đặt dưới `_scratch/`.
+# Một route thăm dò còn sót lại vừa làm đỏ `pnpm build` vừa lọt vào commit đầu tiên của app mới.
+#
+# Quy ước này được ghi cả trong AGENTS.md ("Quy ước bắt buộc giữ") — file .gitignore không phải chỗ
+# người đọc đi tìm quy ước, nên đừng để nó là chỗ DUY NHẤT nói ra điều này.
+app/**/_scratch/
+
+# Ngoài `_scratch/`, chặn luôn hai tiền tố hay dùng cho route thăm dò: `__` (vd `app/__probe/`)
+# và `probe-` (vd `app/probe-entries/`). Chúng thường được dựng để thử một entry của
+# @comitor/ui rồi bỏ quên.
+#
+# Danh sách theo tiền tố thì luôn LỌT: một thư mục tên khác (`app/zz-thu/`) không khớp luật nào và
+# sẽ vào commit. Lưới chắn không phụ thuộc tên nằm ở chỗ khác — đối chiếu bảng route mà `pnpm build`
+# in ra với BẢN ĐỒ ROUTE trong README (xem AGENTS.md §Quy ước, mục `_scratch/`). Không chép số
+# lượng route vào đây: thêm một trang là dòng này thành sai, và không ai đi tìm quy ước trong
+# .gitignore để sửa. Đừng chuyển danh sách này thành kiểu "chặn hết, trừ (shell)":
+# một route group mới hợp lệ (vd `app/(auth)/`) sẽ bị bỏ qua IM LẶNG, còn tệ hơn một thư mục thừa.
+app/__*
+app/**/__*
+app/probe-*
+app/**/probe-*
+
+# ...trừ thư mục kiểm thử: `__tests__` cũng bắt đầu bằng `__` nên nó rơi vào luật trên và sẽ bị
+# BỎ QUA IM LẶNG khi app thêm test. Dòng phủ định phải đứng SAU luật chặn mới có hiệu lực.
+!app/**/__tests__/
+
+# Gói đóng sẵn
+#
+# Phụ thuộc đến từ registry, không từ tarball trong repo. Một file `.tgz` lọt vào commit
+# kéo theo đường dẫn `file:` trong pnpm-lock.yaml và làm `pnpm install` phụ thuộc máy.
+*.tgz
+
+# ⚠ `pnpm-workspace.yaml` CÓ COMMIT — đừng đưa nó lại vào danh sách này.
+#
+# Một bản trước của file này bỏ qua nó với lý do "chỉ là danh sách miễn trừ `minimumReleaseAge`
+# riêng theo máy". Lý do đó đã hết đúng: từ khi starter có Prisma, file ấy mang `allowBuilds` —
+# thứ QUYẾT ĐỊNH `prisma generate` có tải được query engine hay không. Bỏ qua nó nghĩa là máy
+# nào clone repo cũng gặp `pnpm build` đỏ với một thông điệp về engine không gợi gì tới nguyên nhân.
+
+tsconfig.tsbuildinfo

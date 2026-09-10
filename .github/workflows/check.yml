@@ -1,0 +1,137 @@
+# Cổng đầy đủ của repo, chạy trên mọi PR và mọi lần đẩy lên `main`.
+#
+# ── VÌ SAO FILE NÀY TỒN TẠI ─────────────────────────────────────────────────────────────────
+# Toàn bộ kiến trúc của repo dựa trên một tiền đề: `pnpm check` xanh trước khi merge. Tám cổng
+# trong đó được dựng rất công phu (hai cổng là script viết tay riêng cho repo này), và trước file
+# này thì KHÔNG CÓ GÌ bắt chúng chạy. `comitor-ui` đã có CI từ lâu — starter là repo Comitor duy
+# nhất thiếu, nên người mới mặc định tưởng có.
+#
+# ⚠ Module sinh ra từ starter GIỮ NGUYÊN file này. Nó là một phần của khung, không phải ví dụ.
+
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Đẩy tiếp lên cùng một PR thì huỷ lượt chạy cũ — không ai đọc kết quả của bản đã bị thay thế.
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: pnpm check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # ── VÌ SAO JOB NÀY KHÔNG CẦN POSTGRES ────────────────────────────────────────────────────
+    # `next build` không prerender trang nào đọc database: mọi trang đi qua `requireSession()`,
+    # nên chúng là dynamic và Next không chạy truy vấn nào lúc build. `prisma generate` chỉ đọc
+    # `schema.prisma`. Đã kiểm bằng cách build với đúng hai biến bên dưới và không có Postgres nào.
+    #
+    # Ngày module thêm một phép kiểm CẦN database (xem `pnpm db:check` ở docs/migration.md, hoặc
+    # integration test), đừng nhét nó vào job này — thêm một job THỨ HAI có `services: postgres`.
+    # Giữ job này chạy được không cần dịch vụ nào là thứ làm nó nhanh và gần như không bao giờ hỏng
+    # vì hạ tầng.
+
+    env:
+      # ⚠ ĐỌC TRƯỚC KHI SỬA: hai giá trị dưới đây phải là giá trị THẬT, không phải placeholder.
+      #
+      # `lib/env.ts` từ chối mọi chuỗi khớp /^</ · /^doi-gia-tri/i · /^thay-/i · /^changeme/i ·
+      # /^your-/i · /^xxx/i, và ném NGAY LÚC KHỞI ĐỘNG. Đó là hành vi đúng (một placeholder lọt
+      # vào production là một sự cố), nhưng nó có nghĩa là **chép `.env.example` vào đây thì CI đỏ
+      # ngay** — với một thông điệp trỏ vào `COMITOR_SESSION_SECRET` chứ không nói gì về CI.
+      #
+      # Cả hai đều là giá trị vứt đi: không Postgres nào được nối tới, và không cookie nào được
+      # phát ra. Chúng chỉ cần TỒN TẠI và TRÔNG THẬT để `pnpm build` đi qua được.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      COMITOR_SESSION_SECRET: Q2ktY2hpLWxhLWdpYS10cmktZ2lhLWRlLWJ1aWxkLXhhbmg
+      # Không khai `COMITOR_CLIENT_*` / `COMITOR_M2M_*`: thiếu chúng thì `accountConfigured` là
+      # `false` và app nói thẳng "chưa cấu hình xác thực" thay vì nổ — cố ý, xem `lib/env.ts`.
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Đọc `packageManager: "pnpm@11.20.0"` trong package.json — một nguồn sự thật, không ghim
+      # phiên bản pnpm lần thứ hai ở đây.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # ⚠ `--frozen-lockfile` là BẮT BUỘC, không phải thói quen.
+      # `pnpm-workspace.yaml` khai `minimumReleaseAgeExclude`, tức phép giải cây phụ thuộc phụ
+      # thuộc vào TUỔI của gói tại thời điểm chạy. Không khoá lockfile thì CI có thể giải ra một
+      # cây khác máy dev — và khi đó CI xanh/đỏ không còn nói gì về mã nữa.
+      - run: pnpm install --frozen-lockfile
+
+      # lint · typecheck · i18n:check · core:check · tenant:check · api:check · color:check
+      # · version:check · test · build
+      - run: pnpm check
+
+  # ── JOB THỨ HAI: những gì CẦN một database ────────────────────────────────────────────────
+  #
+  # Tách khỏi job trên chứ không gộp, vì `pnpm check` chạy được KHÔNG CẦN Docker là một tính chất
+  # đáng giữ — một cổng đòi hạ tầng là một cổng người ta bỏ qua ở máy. Xem docs/migration.md §2.
+  database:
+    name: migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        # Ghim đúng phiên bản mà docker-compose.yml dùng — một migration chạy được ở đây mà không
+        # chạy được ở máy phát triển là tín hiệu tệ nhất một cổng có thể phát ra.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # ⚠ Database này phải được TẠO TAY ở một bước bên dưới. Prisma KHÔNG tạo nó — xem lý do và
+      # phép đo ở đó.
+      SHADOW_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_shadow
+      COMITOR_SESSION_SECRET: Q2ktY2hpLWxhLWdpYS10cmktZ2lhLWRlLWJ1aWxkLXhhbmg
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Áp TOÀN BỘ lịch sử migration lên một database rỗng. Bắt được một file SQL hỏng, và bắt được
+      # cả ca "migration chạy được trên database đã có dữ liệu của tôi nhưng không chạy từ số 0".
+      - name: prisma migrate deploy
+        run: pnpm db:deploy
+
+      # ⚠ Prisma KHÔNG tạo shadow database, nó chỉ NỐI vào. Đã đo trên Prisma 6.19.3: trỏ
+      # `--shadow-database-url` vào một database chưa tồn tại thì `migrate diff` thoát
+      # `P1003 Database ... does not exist`, KỂ CẢ khi role có CREATEDB. Cái Prisma CÓ làm là dọn
+      # sạch shadow ở ĐẦU mỗi lần chạy. Chi tiết ở docs/migration.md §2.
+      # `psql` có sẵn trên runner ubuntu-latest; mật khẩu đi trong chính chuỗi kết nối.
+      - name: Dựng shadow database
+        run: psql "$DATABASE_URL" -c 'CREATE DATABASE ci_shadow;'
+
+      # schema.prisma có đi trước thư mục migrations/ không — tức "ai đó quên commit migration".
+      # Ca này đi qua MỌI cổng khác và nổ ở máy đồng đội vài ngày sau. Xem docs/migration.md §2.
+      # ⚠ `db:check` đọc SHADOW_DATABASE_URL từ BIẾN MÔI TRƯỜNG trước, `.env` sau. Bản trước chỉ
+      # đọc `.env` — mà CI không có file đó (nó bị gitignore), nên `node --env-file=.env` gãy,
+      # `$(...)` nở thành RỖNG, và Prisma nhận một `--shadow-database-url` trống. Job này đỏ ở
+      # MỌI run từ 14334f4 (02.09) tới f32d358 (05.09) vì đúng chuyện đó.
+      - name: schema khớp migrations
+        run: pnpm db:check

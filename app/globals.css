@@ -1,0 +1,7 @@
+/* Đúng HAI dòng, đúng thứ tự này. Tailwind phải được nạp trước để `@theme` / `@custom-variant`
+   / `@source` trong styles.css của gói có nghĩa; đảo thứ tự là mất toàn bộ utility.
+
+   KHÔNG thêm gì vào file này: không token màu, không hex, không lớp tiện ích tự chế.
+   Thiếu token thì sửa ở gói @comitor/ui rồi nâng version — xem README.md của starter. */
+@import "tailwindcss";
+@import "@comitor/ui/styles.css";

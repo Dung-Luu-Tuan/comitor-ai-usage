@@ -1,0 +1,151 @@
+# Hạ tầng phát triển của comitor-starter — chạy `docker compose up -d` là đủ.
+#
+# ── CỔNG LỆCH CẢ VỚI CHUẨN LẪN VỚI COMITOR.ACCOUNT ─────────────────────────────────────────
+# Ba dịch vụ, và không cái nào dùng cổng chuẩn:
+#
+#   | Dịch vụ  | chuẩn      | comitor-account | repo này    |
+#   |----------|------------|-----------------|-------------|
+#   | Postgres | 5432       | 5435            | **5436**    |
+#   | MinIO    | 9000/9001  | 9100/9101       | **9110/9111** |
+#   | Mailpit  | 1025/8025  | 1025/8025       | **1026/8026** |
+#
+# Lý do KHÔNG phải sự cầu kỳ: một module Comitor gần như luôn được phát triển CÙNG LÚC với
+# Comitor.Account (module cần Account để đăng nhập). Trùng cổng thì container thứ hai không lên
+# được — hoặc tệ hơn, app nối nhầm vào database của dự án khác và không có gì báo. Máy của một lập
+# trình viên Comitor cũng thường đã có Postgres của dự án khác nghe ở 5432.
+#
+# ⚠ Mailpit của Account KHÔNG lệch chuẩn (1025/8025), nên repo này phải lệch — nếu không thư của
+# hai dự án rơi chung một hộp và bạn đọc nhầm thư của bên kia.
+#
+# ── MODULE THỨ HAI, THỨ BA… LẤY CỔNG Ở ĐÂU ────────────────────────────────────────────────
+# Hai module Comitor chạy song song là tình huống MẶC ĐỊNH, không phải ngoại lệ — mà cả hai đều
+# sao từ repo này, tức cả hai đều mặc định nghe ở 3000/5436/9110/1026 và cùng đặt
+# `POSTGRES_DB: comitor_starter`. Module thứ hai lên sau sẽ hoặc không lên được, hoặc — nặng hơn —
+# **nối vào database của module thứ nhất**, đúng thứ cảnh báo ở khối trên nói.
+#
+# Quy tắc suy được, không phải một bảng phải tra: **module thứ N** (Tasks = 0) nhận
+#
+#     app 3000+10N · Postgres 5436+10N · MinIO 9110+10N / 9111+10N · Mailpit 1026+10N / 8026+10N
+#
+#   | N | Module | app  | Postgres | MinIO       | Mailpit     | POSTGRES_DB     |
+#   |---|--------|------|----------|-------------|-------------|-----------------|
+#   | 0 | tasks  | 3000 | 5436     | 9110 / 9111 | 1026 / 8026 | comitor_starter |
+#   | 1 | crm    | 3010 | 5446     | 9120 / 9121 | 1036 / 8036 | comitor_crm     |
+#   | 2 | hr     | 3020 | 5456     | 9130 / 9131 | 1046 / 8046 | comitor_hr      |
+#   | 3 | chat   | 3030 | 5466     | 9140 / 9141 | 1056 / 8056 | comitor_chat    |
+#   | 4 | docs   | 3040 | 5476     | 9150 / 9151 | 1066 / 8066 | comitor_docs    |
+#
+# (Hàng N=0 giữ tên `comitor_starter` vì đó là tên repo này đang dùng thật; một module sinh ra từ
+# đây đổi nó theo `APP_ID` của mình. Bảng nói cái ĐANG CÓ, không nói cái đáng lẽ nên có.)
+#
+# ⚠ Đổi cổng app thì phải đổi **cả `.claude/launch.json`** — lệch cổng là kiểu lỗi im lặng nhất
+# của repo này: agent chụp màn hình một server, người đọc README mở một server khác.
+#
+# ── VÌ SAO GHIM TAG, KHÔNG DÙNG `latest` ──────────────────────────────────────────────────
+# `postgres` đã ghim `16-alpine` từ đầu; ba image còn lại thì không, và chỗ lệch đó không vô hại.
+# MinIO là thứ KÝ URL: một bản phát hành đổi hành vi ký sẽ hiện ra dưới dạng "ảnh không tải được",
+# không phải dưới dạng một lỗi có tên. Và vì `latest` được kéo mới ở mọi máy, một bản hỏng không
+# làm MỘT đội mất buổi sáng — nó làm **mọi đội mới** mất buổi sáng cùng lúc, và không ai đối chiếu
+# được với "hôm qua vẫn chạy" vì hôm qua là một image khác.
+# Nâng thì nâng có chủ đích, và ghi vào CHANGELOG.
+#
+# ⚠ `docker compose down` giữ dữ liệu (volume có tên). Muốn xoá sạch để dựng lại từ đầu:
+#   docker compose down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: comitor-ai-usage-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comitor
+      POSTGRES_PASSWORD: comitor
+      POSTGRES_DB: comitor_ai_usage
+    ports:
+      - "5486:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` chứ không chỉ "container đang chạy": Postgres nhận cổng TRƯỚC khi sẵn sàng
+      # nhận truy vấn, nên không có healthcheck thì `prisma migrate` chạy ngay sau `up` sẽ hỏng.
+      test: ["CMD-SHELL", "pg_isready -U comitor -d comitor_ai_usage"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Kho đối tượng — MinIO ở local, S3 thật khi triển khai. Bucket RIÊNG TƯ: xem `minio-init`.
+  #
+  # ⚠ Ở PRODUCTION đây là ĐÚNG MỘT bucket dùng chung cho MỌI app Comitor, và mỗi app chỉ khác nhau
+  # ở TIỀN TỐ KHOÁ (`tasks/attachment/…` ở repo này, `account/avatar/…` ở Account). Ở máy phát
+  # triển thì mỗi repo chạy MinIO riêng để nó đứng một mình được — cùng tên bucket `comitor`, cùng
+  # mã, chỉ khác `COMITOR_S3_ENDPOINT`.
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    container_name: comitor-ai-usage-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: comitor
+      MINIO_ROOT_PASSWORD: comitor-dev-secret
+    command: server /data --console-address ":9001"
+    ports:
+      - "9160:9000" # API S3 — giá trị của COMITOR_S3_ENDPOINT
+      - "9161:9001" # Bảng điều khiển web
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Máy chủ SMTP GIẢ để đi ĐƯỜNG THẬT của email ở máy phát triển.
+  #
+  # ── VÌ SAO CẦN NÓ, KHI ĐÃ CÓ COMITOR_MAIL_TRANSPORT=console ──────────────────────────────
+  # `console` in nội dung thư ra terminal — đủ để đọc một đường link, nhưng nó KHÔNG chạy một dòng
+  # nào của transport SMTP. Tức nhánh mã thật sự chạy trên production là nhánh chưa bao giờ được
+  # chạy. Đổi `.env` sang `smtp` + `localhost:1026` là đi trọn vẹn luồng "giao việc → SMTP → hộp
+  # thư" mà không gửi ra Internet.
+  #
+  # ⚠ KHÔNG đòi xác thực (không MAILPIT_SMTP_AUTH_*): đó là lý do `lib/mail.ts` bỏ HẲN khối `auth`
+  # khi COMITOR_SMTP_USER rỗng, thay vì truyền chuỗi rỗng vào.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    container_name: comitor-ai-usage-mailpit
+    restart: unless-stopped
+    ports:
+      - "1076:1025" # SMTP — giá trị của COMITOR_SMTP_PORT
+      - "8076:8025" # Hộp thư xem bằng trình duyệt
+    environment:
+      MP_MAX_MESSAGES: 500
+      # Không ghi ra đĩa: đây là thư rác của môi trường phát triển, mất là đúng.
+      MP_DATABASE: ""
+
+  # Chạy MỘT LẦN rồi thoát: tạo bucket. Không phải một dịch vụ chạy nền.
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    container_name: comitor-ai-usage-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    # `entrypoint` phải ghi đè: entrypoint mặc định của image là chính `mc`, nên không có dòng này
+    # thì `sh -c …` bị `mc` hiểu là một lệnh con của nó và báo "`sh` is not a recognized command".
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        mc alias set local http://minio:9000 comitor comitor-dev-secret
+        mc mb --ignore-existing local/comitor
+        #
+        # ⚠ TUYỆT ĐỐI KHÔNG `mc anonymous set download`.
+        #
+        # Bucket này RIÊNG TƯ. Tệp người dùng đính kèm vào một công việc là dữ liệu nội bộ của
+        # workspace: mở đọc ẩn danh nghĩa là bất kỳ ai có URL đều xem được mãi mãi, không cần đăng
+        # nhập, và URL thì rò ra qua referrer, log, lịch sử trình duyệt. Giao diện luôn nhận URL
+        # ĐÃ KÝ, CÓ HẠN (xem `lib/storage.ts`).
+        #
+        # Website tiếp thị dùng một bucket CÔNG KHAI riêng — không phải bucket này.
+        mc anonymous set none local/comitor
+        echo "Bucket 'comitor' đã sẵn sàng (riêng tư)."
+
+volumes:
+  postgres-data:
+  minio-data:

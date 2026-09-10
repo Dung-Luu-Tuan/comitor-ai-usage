@@ -1,0 +1,406 @@
+// Lược đồ database của RIÊNG module này.
+//
+// ═══ RANH GIỚI ACCOUNT / APP, VIẾT THÀNH LƯỢC ĐỒ ═══════════════════════════════════════════
+//
+// Không có bảng `User`, `Workspace`, `Member` hay `Role` ở đây, và đó là ĐIỀU QUAN TRỌNG NHẤT
+// của file này. Comitor.Account trả lời đúng ba câu — *bạn là ai*, *bạn thuộc không gian làm việc
+// nào với vai trò thô gì*, *không gian làm việc đó dùng app nào* — và dữ liệu của ba câu ấy nằm ở
+// database CỦA ACCOUNT, đi vào module qua HTTP chứ không qua một kết nối database chung.
+//
+// Vì vậy module chỉ giữ ĐỊNH DANH: `workspaceId`, `assigneeUserId`, `actorUserId` là chuỗi id do
+// Account cấp. Tên người và ảnh đại diện KHÔNG được lưu ở đây — chúng đổi ở Account và một bản sao
+// trong database này sẽ cũ dần mà không ai biết. Chỗ đọc chúng là `lib/account/directory.ts`.
+//
+// ⚠ Cám dỗ "thêm cột `assigneeName` cho khỏi phải gọi API" sẽ xuất hiện, và nó luôn nghe hợp lý ở
+// đúng cái ngày người ta thêm nó. Cái giá trả sau: người dùng đổi tên ở Account, mọi app trong hệ
+// đổi theo, trừ app này.
+//
+// ═══ MỌI BẢNG ĐỀU CÓ `workspaceId` ════════════════════════════════════════════════════════
+//
+// Một cài đặt của module phục vụ NHIỀU không gian làm việc. Thiếu cột đó ở một bảng là dữ liệu của
+// khách hàng này rò sang khách hàng khác — hạng lỗi tệ nhất một SaaS có thể mắc, và nó không lộ ra
+// cho tới khi có khách hàng thứ hai. Mọi truy vấn trong `lib/` đều lọc theo nó; `@@index` bên dưới
+// là để phép lọc ấy không thành quét bảng.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Dự án — nhóm công việc lại theo mục tiêu.
+///
+/// KHÔNG có cột `progress` hay `taskCount`: cả hai SUY ĐƯỢC từ `tasks`. Một cột đếm sẵn là một cột
+/// sẽ lệch — nó chỉ đúng cho tới lần đầu tiên có ai xoá một việc bằng đường không đi qua chỗ tăng
+/// giảm bộ đếm. Xem `lib/core/project-progress.ts` cho phép tính, và `lib/projects.ts` cho truy vấn.
+model Project {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  /// Mã ngắn hiện trên trục X của biểu đồ (`NT`, `DD`…). Ngắn vì 5 cột mà để tên đầy đủ là chữ
+  /// chồng lên nhau; tên đầy đủ đi vào tooltip.
+  code        String
+  name        String
+  /// id người phụ trách — do Account cấp. Xem ghi chú đầu file.
+  ownerUserId String   @map("owner_user_id")
+  /// `active` | `on-hold` | `completed`. Giá trị là chuỗi MÁY, tiếng Anh; nhãn hiển thị ở
+  /// `lib/catalog/task.ts` (`PROJECT_STATUSES`) và bản dịch ở `messages/*.json`.
+  status      String
+  /// Chỉ-có-ngày, không giờ. `@db.Date` chứ không `DateTime` đầy đủ: hạn chót là một NGÀY, và lưu
+  /// kèm giờ là mời cả một họ lỗi múi giờ vào — xem `lib/core/iso-date.ts`.
+  dueDate     DateTime @map("due_date") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tasks Task[]
+
+  @@unique([workspaceId, code])
+  /// Đích của khoá ngoại KÉP từ `Task`. Xem khối "LƯỚI CUỐI" ở quan hệ `Task.project`.
+  ///
+  /// `id` vốn đã là khoá chính nên cặp `(workspaceId, id)` cũng duy nhất — dòng này không thêm
+  /// ràng buộc nào mới về dữ liệu. Nó tồn tại vì PostgreSQL đòi một khoá duy nhất trên ĐÚNG tập
+  /// cột mà khoá ngoại trỏ tới.
+  @@unique([workspaceId, id])
+  @@index([workspaceId])
+  @@map("projects")
+}
+
+/// Công việc — bản ghi trung tâm của module.
+model Task {
+  id          String @id @default(cuid())
+  workspaceId String @map("workspace_id")
+  /// Mã hiển thị cho người dùng (`CV-014`). Duy nhất TRONG một không gian làm việc, không phải
+  /// toàn hệ: hai khách hàng khác nhau đều có quyền có `CV-001` của riêng họ.
+  code        String
+  title       String
+  summary     String @default("")
+
+  projectId       String  @map("project_id")
+  /// `null` = chưa giao. Đây là trạng thái HỢP LỆ, không phải dữ liệu thiếu.
+  assigneeUserId  String? @map("assignee_user_id")
+  requesterUserId String  @map("requester_user_id")
+
+  /// `todo` | `in-progress` | `in-review` | `done` | `overdue`
+  status   String
+  /// `low` | `medium` | `high` | `urgent`
+  priority String
+
+  dueDate DateTime @map("due_date") @db.Date
+
+  /// Ước lượng tính bằng PHÚT, kiểu `Int`.
+  ///
+  /// ⚠ CỐ Ý KHÔNG dùng `Decimal` cho "số giờ". Prisma trả `Decimal` về dưới dạng một OBJECT của
+  /// decimal.js, và object đó KHÔNG tuần tự hoá được qua ranh giới Server Component → Client
+  /// Component: Next ném "Only plain objects can be passed to Client Components" ở lúc chạy, tại
+  /// một chỗ cách nguyên nhân rất xa. Số nguyên phút tránh cả chuyện đó lẫn chuyện làm tròn nhị phân.
+  estimateMinutes Int @map("estimate_minutes")
+
+  /// Loại yêu cầu: `task` | `incident` | `improvement` | `external`.
+  requestType      String   @map("request_type")
+  needsApproval    Boolean  @default(false) @map("needs_approval")
+  approvalFlowId   String?  @map("approval_flow_id")
+  /// Kênh báo lúc tạo việc (`in-app`, `email`…). Mảng chuỗi máy.
+  notifyChannels   String[] @map("notify_channels")
+  remindBeforeDue  Boolean  @default(false) @map("remind_before_due")
+  syncWithCalendar Boolean  @default(false) @map("sync_with_calendar")
+
+  /// KHOÁ object trong bucket riêng tư (`tasks/attachment/{taskId}/…`), KHÔNG phải URL.
+  ///
+  /// ⚠ Lưu URL vào cột này là lưu một giá trị SẼ HẾT HẠN ngay trong database: URL hiển thị được là
+  /// URL đã ký, có hạn, và nó được ký LẠI ở mỗi lần đọc. Xem `lib/storage.ts`.
+  attachmentKey  String? @map("attachment_key")
+  /// Tên tệp người dùng thấy. Tách khỏi khoá vì khoá cố ý mang tên ngẫu nhiên (tên gốc có thể chứa
+  /// dấu, khoảng trắng, và cả đường dẫn tương đối).
+  attachmentName String? @map("attachment_name")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// ── LƯỚI CUỐI CỦA BẤT BIẾN `workspaceId`, ĐẶT Ở TẦNG DATABASE ─────────────────────────────
+  ///
+  /// Khoá ngoại đi bằng **hai cột**, không phải một: một công việc chỉ gắn được vào một dự án
+  /// CÙNG không gian làm việc. Sai một chữ ở tầng ứng dụng thì Postgres từ chối.
+  ///
+  /// ⚠ Vì sao cần: hôm nay tính toàn vẹn giữa hai khách hàng chỉ do MỘT phép kiểm giữ —
+  /// `findFirst({ where: { workspaceId, projectId } })` ở `app/api/tasks/route.ts`. Ngày có
+  /// `PATCH /api/tasks/{id}` cho phép đổi dự án mà người viết quên chép lại phép kiểm đó, không
+  /// gì từ chối: `projectId` là một chuỗi cuid hợp lệ, `tsc` xanh, và công việc của khách hàng A
+  /// nằm trong dự án của khách hàng B.
+  ///
+  /// Phép kiểm ở tầng ứng dụng VẪN GIỮ, không thay thế được: nó cho thông điệp người dùng đọc
+  /// được (`PROJECT_NOT_FOUND`), còn khoá ngoại chỉ ném một lỗi ràng buộc. Cái này là lưới cho
+  /// đường ghi CHƯA ĐƯỢC VIẾT.
+  project  Project       @relation(fields: [workspaceId, projectId], references: [workspaceId, id], onDelete: Restrict)
+  watchers TaskWatcher[]
+
+  @@unique([workspaceId, code])
+  @@index([workspaceId, status])
+  @@index([workspaceId, projectId])
+  @@index([workspaceId, assigneeUserId])
+  @@map("tasks")
+}
+
+/// Người theo dõi một công việc — quan hệ nhiều-nhiều với NGƯỜI, mà người thì ở Account.
+///
+/// Vì vậy đây là bảng nối "một phía": `userId` là chuỗi id, không có khoá ngoại nào trỏ sang bảng
+/// người dùng, vì không có bảng người dùng nào ở đây để trỏ.
+///
+/// ── VÌ SAO BẢNG NÀY KHÔNG CÓ `workspaceId` ────────────────────────────────────────────────
+/// Luật ở đầu file nói "mọi bảng đều có `workspaceId`", và đây là một trong hai ngoại lệ. Lý do
+/// phải nằm ngay đây chứ không ở một danh sách nơi khác: **một ngoại lệ không ghi lý do, đứng
+/// cạnh một ngoại lệ có ghi lý do, dạy người đọc rằng luật đầu file là tuỳ chọn.**
+///
+/// Hàng ở đây chỉ TỚI ĐƯỢC qua `Task`: khoá chính là `(taskId, userId)`, và mọi đường đọc đều
+/// bắt đầu từ một công việc đã được lọc theo `workspaceId`. Thêm cột đó vào đây là chép lại một
+/// sự thật đã có ở bảng bên cạnh — và một bản sao thì có ngày lệch.
+///
+/// ⚠ Điều kiện để lý do trên còn đúng: **không có truy vấn nào bắt đầu TỪ `task_watchers`** mà
+/// không đi qua `Task`. Ngày module cần "những việc tôi đang theo dõi" trải trên nhiều workspace,
+/// hãy lọc qua quan hệ (`where: { task: { workspaceId } }`) chứ đừng thêm cột — `pnpm tenant:check`
+/// chấp nhận hình dạng đó, và `scripts/seed.ts` đã dùng nó làm bản mẫu.
+model TaskWatcher {
+  taskId String @map("task_id")
+  userId String @map("user_id")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  /// Tra theo NGƯỜI: "tôi đang theo dõi những việc nào". Khoá chính `(taskId, userId)` chỉ phục vụ
+  /// chiều ngược lại; thiếu index này thì câu hỏi kia là một lần quét bảng.
+  @@index([userId])
+  @@map("task_watchers")
+}
+
+/// Nhật ký hoạt động — chuỗi sự kiện ĐÃ ĐÓNG BĂNG.
+///
+/// ── VÌ SAO LƯU SẴN `targetCode` / `targetTitle` THAY VÌ TRA NGƯỢC ──────────────────────────
+/// Đổi tiêu đề một công việc hôm nay không được phép viết lại dòng lịch sử của hôm qua, và một
+/// việc bị xoá thì dòng nhật ký vẫn phải đọc được. Đây là ngoại lệ CÓ LÝ DO của luật "đừng lưu
+/// bản sao": bản sao ở đây chính là nội dung của sự kiện, không phải một cache.
+///
+/// ── VÌ SAO KHÔNG CÓ CỘT `verb` ────────────────────────────────────────────────────────────
+/// Bản dữ liệu mẫu trước đây lưu `verb: "đã đổi độ ưu tiên thành Cao"` — một CHUỖI HIỂN THỊ nằm
+/// trong tầng dữ liệu. Nó không dịch được sang ngôn ngữ khác, và nó khoá cứng một thứ tiếng vào
+/// mọi dòng đã ghi. Nay chỉ có `kind` (chuỗi máy) cùng vài tham số; câu chữ dựng ở tầng hiển thị
+/// từ `messages/*.json`.
+model Activity {
+  id           String   @id @default(cuid())
+  workspaceId  String   @map("workspace_id")
+  /// `created` | `assigned` | `updated` | `review-requested` | `completed` | `overdue`
+  kind         String
+  actorUserId  String   @map("actor_user_id")
+  /// Người NHẬN của sự kiện `assigned`. `null` với mọi loại khác.
+  targetUserId String?  @map("target_user_id")
+  targetCode   String   @map("target_code")
+  targetTitle  String   @map("target_title")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([workspaceId, createdAt])
+  @@map("activities")
+}
+
+/// Thông báo trong ứng dụng — cùng nguyên tắc với `Activity`: giữ GIÁ TRỊ, không giữ câu chữ.
+model Notification {
+  id          String    @id @default(cuid())
+  workspaceId String    @map("workspace_id")
+  /// NGƯỜI NHẬN. Một sự kiện sinh ra nhiều dòng, mỗi người nhận một dòng — nhờ vậy "đã đọc" là
+  /// trạng thái của từng người, không phải của sự kiện.
+  userId      String    @map("user_id")
+  /// `mention` | `assignment` | `deadline` | `system`
+  kind        String
+  actorUserId String?   @map("actor_user_id")
+  taskCode    String?   @map("task_code")
+  taskTitle   String?   @map("task_title")
+  /// `null` = chưa đọc. Lưu MỐC chứ không lưu cờ boolean: nó trả lời được cả "chưa đọc?" lẫn "đọc
+  /// lúc nào?", và một cột boolean thì không bao giờ nâng cấp được thành mốc mà không mất lịch sử.
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([workspaceId, userId, createdAt])
+  @@map("notifications")
+}
+
+/// Cài đặt của RIÊNG module, theo từng không gian làm việc — bốn tab của `/settings`.
+///
+/// ⚠ Không khoản nào ở đây là dữ liệu của Account. Nếu một trường mới không trả lời được câu
+/// *"nó đổi cách ỨNG DỤNG NÀY làm việc à?"* thì chỗ của nó là Comitor.Account, không phải đây.
+///
+/// Cột TƯỜNG MINH chứ không một cột `Json`: mỗi cột là một hợp đồng mà `tsc` kiểm được, và thêm
+/// một cài đặt mới thì migration nói ra điều đó. Một blob `Json` thì mọi thay đổi lược đồ đều
+/// im lặng, và mọi phép đọc đều phải tự phòng thủ.
+model AppSetting {
+  workspaceId String @id @map("workspace_id")
+
+  // ── Tab "Chung" ───────────────────────────────────────────────────────────────────────
+  defaultPriority String  @default("medium") @map("default_priority")
+  defaultPageSize Int     @default(20) @map("default_page_size")
+  autoAssignToMe  Boolean @default(false) @map("auto_assign_to_me")
+
+  // ── Tab "Thông báo" ───────────────────────────────────────────────────────────────────
+  notifyAssigned      Boolean @default(true) @map("notify_assigned")
+  notifyDueSoon       Boolean @default(true) @map("notify_due_soon")
+  notifyEmailDigest   Boolean @default(true) @map("notify_email_digest")
+  /// `daily` | `weekly` | `friday`
+  digestFrequency     String  @default("daily") @map("digest_frequency")
+
+  // ── Tab "Nâng cao" ────────────────────────────────────────────────────────────────────
+  allowPublicLink         Boolean @default(false) @map("allow_public_link")
+  keepActivityLog         Boolean @default(true) @map("keep_activity_log")
+  /// `30d` | `90d` | `180d` | `never`
+  archiveAfter            String  @default("90d") @map("archive_after")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
+
+/// Ma trận phân quyền theo chức năng CỦA APP — nửa còn lại của ranh giới Account / app.
+///
+/// Account phát bốn VAI TRÒ THÔ (`owner`/`admin`/`member`/`guest`); bảng này ánh xạ vai trò đó
+/// sang quyền theo chức năng của chính module. Không có chiều ngược lại: app không tạo vai trò,
+/// và Account không biết module này có chức năng gì.
+///
+/// ⚠ Chỉ lưu những ô KHÁC mặc định thì sẽ rẻ hơn, nhưng cũng làm "chưa cấu hình" và "đã tắt tường
+/// minh" không phân biệt được. Lưu đủ từng ô: 4 vai trò × 12 quyền = 48 dòng cho mỗi không gian
+/// làm việc, và phép đọc là một truy vấn duy nhất.
+model RolePermission {
+  workspaceId  String  @map("workspace_id")
+  /// `owner` | `admin` | `member` | `guest` — chuỗi Account trả về, không phải id nội bộ.
+  roleId       String  @map("role_id")
+  /// `task.view`, `app.permissions`… — xem `lib/catalog/permissions.ts`.
+  permissionId String  @map("permission_id")
+  granted      Boolean
+
+  @@id([workspaceId, roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// Bản nháp biểu mẫu tạo việc — MỘT bản cho mỗi người, trong mỗi không gian làm việc.
+///
+/// ── VÌ SAO CỘT `Json` Ở ĐÂY LÀ ĐÚNG, TRONG KHI Ở `AppSetting` LÀ SAI ────────────────────────
+/// Nháp không phải bản ghi nghiệp vụ: nó là ẢNH CHỤP trạng thái biểu mẫu, hợp lệ một phần theo
+/// đúng nghĩa (tiêu đề còn dở, chưa chọn người phụ trách), và hình dạng của nó đổi theo mỗi lần
+/// biểu mẫu đổi. Ép nó thành cột thì mỗi lần thêm một trường vào biểu mẫu là một migration cho
+/// một dữ liệu vốn dĩ vứt đi được.
+///
+/// Cái giá phải trả tường minh: `Json` KHÔNG có hợp đồng nào ở tầng database, nên phép đọc PHẢI
+/// tự kiểm — `taskDraftSchema` (zod) ở `lib/core/task-draft.ts` là chốt đó, và nháp không hợp lệ
+/// thì bị BỎ QUA chứ không làm hỏng trang.
+model TaskDraft {
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  data        Json
+  savedAt     DateTime @default(now()) @updatedAt @map("saved_at")
+
+  @@id([workspaceId, userId])
+  @@map("task_drafts")
+}
+
+/// Phiên đăng nhập của module — bộ token OIDC, cất ở DATABASE chứ không ở cookie.
+///
+/// ── VÌ SAO BẢNG NÀY TỒN TẠI: MỘT LỖI ĐÃ ĐO ĐƯỢC ────────────────────────────────────────────
+/// Bản trước niêm cả bộ token vào chính cookie. Nó chạy đúng cho tới lần xoay token đầu tiên, rồi
+/// hỏng theo một cách không ai đoán trước: **Next CẤM ghi cookie trong lúc render trang**
+/// (*"Cookies can only be modified in a Server Action or Route Handler"*), mà `getSession()` thì
+/// được gọi từ `page.tsx` — tức từ đúng chỗ bị cấm.
+///
+/// Hậu quả đo được 2026-09-01 lúc 17:58: Account xoay token THÀNH CÔNG (token cũ chết ngay), app
+/// không ghi nổi bộ mới vào cookie, nên cookie giữ một refresh token đã chết → request kế tiếp
+/// `invalid refresh token` → người dùng bị đá về đăng nhập, và Account xoá cả họ token vì phát
+/// hiện tái sử dụng. Cứ ~15 phút một lần, và SSO đưa họ quay lại trong dưới một giây nên KHÔNG AI
+/// BÁO LỖI.
+///
+/// Ghi vào database thì không đụng tới cookie, nên phép ghi hợp lệ ở mọi nơi — kể cả giữa lúc
+/// render. Cookie từ nay chỉ mang một định danh mờ và **không bao giờ phải đổi** sau khi đăng nhập.
+///
+/// ── HAI CHỖ LỆCH VỚI QUY ƯỚC CHUNG CỦA FILE NÀY, CÓ LÝ DO ─────────────────────────────────
+///  1. **KHÔNG có `workspaceId`.** Quy tắc "mọi bảng đều có `workspaceId`" bảo vệ DỮ LIỆU KHÁCH
+///     HÀNG khỏi rò sang nhau. Hàng ở đây không phải dữ liệu khách hàng mà là trạng thái xác thực
+///     của MỘT người, và nó ra đời TRƯỚC khi biết người đó sẽ mở không gian làm việc nào —
+///     workspace đang chọn nằm trong `payload`, đổi được mà không đổi hàng.
+///  2. **KHÔNG có `userId`.** Đăng xuất tra theo cookie nên không cần nó. Ngày nào module nhận
+///     back-channel logout của Account thì mới cần — lúc đó thêm cột và một `@@index`, vì chỉ khi
+///     đó mới có ai tra theo người dùng. (Ngày đó đã tới; xem cột `sid` bên dưới.)
+///
+///     ⚠ **Lỗ hổng đó nay đã đóng CẢ HAI NỬA.**
+///
+///     · `app/api/comitor/webhook/route.ts` nhận `member.removed` / `seat.revoked` /
+///       `app.suspended` và gọi `revokeSessionsForUser()` — đó là lý do cột `user_id` tồn tại.
+///     · `app/api/comitor/backchannel-logout/route.ts` (2026-09-07) nhận `logout_token` của
+///       Account và gọi `closeSessionsBySid()` — đó là lý do cột `sid` tồn tại.
+///
+///     Verify JWT nằm ở `@comitor/account-sdk` (`verifyLogoutToken`, từ `0.3.0`), KHÔNG ở
+///     repo này — đúng như bản trước của khối này đã dặn: verify là hành vi ngầm của tầng OIDC,
+///     cả năm module cần CÙNG một bản, và repo này là bản được SAO CHÉP nên viết nó vào đây chính
+///     là tạo ra năm bản. SDK làm được mà giữ ZERO dependency vì Account ký ES256, thứ
+///     `crypto.subtle` verify thẳng được.
+///
+model AccountSession {
+  /// SHA-256 (hex) của bí mật nằm trong cookie — KHÔNG phải chính bí mật đó.
+  ///
+  /// ⚠ Lưu thẳng giá trị cookie vào đây thì một bản kết xuất database là một tập vé vào cửa dùng
+  /// được ngay. Băm một chiều thì kẻ đọc được bảng này vẫn không dựng lại được cookie nào.
+  id        String   @id
+  /// Bộ token đã niêm bằng AES-256-GCM (`lib/account/session-store.ts`) — hai lớp, cố ý: quyền
+  /// đọc bảng không đủ để lấy refresh token, còn cần cả `COMITOR_SESSION_SECRET`.
+  payload   String
+  /// Hết hạn thì hàng vô giá trị. Dọn bằng `deleteMany` ở đường đăng nhập, không cần cron.
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// id người dùng do Account cấp — để THU HỒI được phiên theo người.
+  ///
+  /// ⚠ Nullable, và điều đó là bắt buộc chứ không phải lười: migration này chạy TRƯỚC khi mã mới
+  /// lên (xem docs/migration.md §3), nên trong khoảng đó mã CŨ còn đang tạo phiên mà không điền
+  /// cột này. `NOT NULL` ở bước mở rộng là làm mọi lần đăng nhập trong khoảng đó hỏng.
+  ///
+  /// Không cần backfill: phiên tự hết hạn sau 30 ngày, nên cột tự đầy.
+  userId    String?  @map("user_id")
+
+  /// `sid` của Comitor.Account — định danh PHIÊN tại IdP, đọc từ `id_token` lúc đăng nhập.
+  ///
+  /// ⚠ Đây là thứ back-channel logout khớp vào. Không có nó thì route
+  /// `/api/comitor/backchannel-logout` xác thực token hoàn hảo rồi xoá theo một cột toàn NULL —
+  /// khớp 0 hàng, trả 200, Account ghi nhận giao thành công, và phiên module sống trọn 30 ngày.
+  /// Hỏng theo hướng IM LẶNG ở cả hai phía, nên đây là cột chịu lực chứ không phải siêu dữ liệu.
+  ///
+  /// ⚠ Nullable, cùng lý do với `userId`: migration chạy TRƯỚC khi mã mới lên, nên trong khoảng đó
+  /// mã cũ còn tạo phiên mà không điền cột này. Không backfill được — `sid` chỉ có trong `id_token`
+  /// của lần đăng nhập, không dựng lại từ dữ liệu đang lưu. Cửa sổ tự đóng khi phiên cũ hết hạn.
+  sid       String?  @map("sid")
+
+  @@index([expiresAt])
+  /// Thu hồi theo người: `deleteMany({ where: { userId } })` khi Account báo gỡ thành viên hoặc
+  /// thu chỗ ngồi. Thiếu index này thì mỗi lần thu hồi là một lần quét bảng.
+  @@index([userId])
+  /// Back-channel logout tra theo `sid`. Thiếu index này thì mỗi lần Account báo đăng xuất là một
+  /// lần quét bảng — và nó bắn ở MỌI đường xoá phiên bên Account, không riêng `/oauth2/end-session`.
+  @@index([sid])
+  @@map("account_sessions")
+}
+
+/// Webhook đã xử lý — bảng CHỐNG TRÙNG, không phải nhật ký.
+///
+/// ── VÌ SAO PHẢI CÓ ─────────────────────────────────────────────────────────────────────────
+/// Comitor.Account THỬ LẠI: 5 lần, giãn dần tới 2 giờ, và mọi lần thử lại mang CÙNG `payload.id`.
+/// Xử lý hai lần một `seat.revoked` thì vô hại; xử lý hai lần một `member.added` thì không. Phía
+/// nhận phải tự khử trùng — SDK nói thẳng điều đó trong JSDoc của `readWebhook`.
+///
+/// ⚠ KHÔNG có `workspaceId`, và đây là ngoại lệ thứ ba của luật ở đầu file. Hàng ở đây không phải
+/// dữ liệu khách hàng mà là dấu vết của một lần GIAO NHẬN giữa Account và module; một sự kiện có
+/// thể nói về nhiều workspace, hoặc không về workspace nào (`user.deleted`). Lý do được ghi cả ở
+/// `UNSCOPED_MODELS` trong `scripts/check-tenant-scope.ts`.
+model WebhookEvent {
+  /// `payload.id` do Account cấp — chính nó là khoá chống trùng.
+  id         String   @id
+  event      String
+  receivedAt DateTime @default(now()) @map("received_at")
+
+  /// Dọn theo tuổi: giữ vài ngày là đủ để chặn mọi lần thử lại (tối đa 2 giờ), giữ mãi là nuôi một
+  /// bảng chỉ lớn lên. Dọn inline ở đường nhận, cùng khuôn với `account_sessions`.
+  @@index([receivedAt])
+  @@map("webhook_events")
+}

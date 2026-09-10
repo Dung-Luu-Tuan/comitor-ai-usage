@@ -1,0 +1,31 @@
+# ⚠ FILE NÀY KHÔNG PHẢI BẢN SAO CỦA .gitignore, và chỗ khác nhau là chỗ quan trọng nhất:
+# **Docker KHÔNG đọc `.gitignore`**. Thiếu file này thì `COPY . .` mang `.env` THẬT vào một layer
+# của ảnh — vĩnh viễn, đọc lại được bằng `docker history`, và có mặt ở mọi nơi ảnh đó được đẩy tới.
+# `.gitignore` chặn được git; nó không chặn được điều đó.
+
+# Bí mật
+.env
+.env.*
+!.env.example
+
+# Kết quả build và phụ thuộc — build lại trong ảnh, đừng chép từ máy (kiến trúc có thể khác)
+node_modules
+.next
+out
+coverage
+*.tsbuildinfo
+
+# Lịch sử và công cụ — không dùng lúc chạy, và `.git` thường là phần lớn nhất của context
+.git
+.github
+.claude
+.vscode
+.idea
+
+# Tài liệu và hạ tầng phát triển
+*.md
+!README.md
+docs
+docker-compose.yml
+.dockerignore
+.DS_Store

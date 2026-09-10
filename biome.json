@@ -1,0 +1,174 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 120
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "warn"
+      },
+      "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["better-auth", "better-auth/*"],
+                "message": "Khong app nao ngoai comitor-account duoc import better-auth. Xac thuc di qua @comitor/account-sdk — lop cach ly nuot bay hanh vi ngam cua tang OIDC va la thu cho phep doi thu vien sau nay ma khong sua app. Xem AGENTS.md muc Xac thuc."
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "none",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "files": {
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs", "**/*.jsx", "**/*.json", "!.next", "!node_modules"]
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "overrides": [
+    {
+      "includes": ["lib/core/**", "lib/contracts/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "react",
+                      "react-dom",
+                      "next",
+                      "next/*",
+                      "@prisma/*",
+                      "@comitor/ui",
+                      "@comitor/ui/*",
+                      "next-intl",
+                      "next-intl/*",
+                      "server-only",
+                      "client-only",
+                      "@/lib/**",
+                      "!@/lib/core",
+                      "!@/lib/core/**",
+                      "!@/lib/contracts",
+                      "!@/lib/contracts/**"
+                    ],
+                    "message": "lib/core va lib/contracts la LOI THUAN: khong framework, khong Prisma, khong chuoi hien thi. Xem docs/kien-truc-ung-dung.md muc 4, tang 1."
+                  },
+                  {
+                    "group": ["better-auth", "better-auth/*"],
+                    "message": "Khong app nao ngoai comitor-account duoc import better-auth. Xac thuc di qua @comitor/account-sdk — lop cach ly nuot bay hanh vi ngam cua tang OIDC va la thu cho phep doi thu vien sau nay ma khong sua app. Xem AGENTS.md muc Xac thuc."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["stores/**", "hooks/**", "lib/api-client/**", "lib/catalog/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "@prisma/*",
+                      "server-only",
+                      "@/lib/**",
+                      "!@/lib/core",
+                      "!@/lib/core/**",
+                      "!@/lib/contracts",
+                      "!@/lib/contracts/**",
+                      "!@/lib/api-client",
+                      "!@/lib/api-client/**",
+                      "!@/lib/catalog",
+                      "!@/lib/catalog/**",
+                      "!@/lib/i18n/config"
+                    ],
+                    "message": "Ma chay o TRINH DUYET chi duoc import lib/core, lib/contracts, lib/api-client, lib/catalog va lib/i18n/config. Xem docs/kien-truc-ung-dung.md muc 6."
+                  },
+                  {
+                    "group": ["better-auth", "better-auth/*"],
+                    "message": "Khong app nao ngoai comitor-account duoc import better-auth. Xac thuc di qua @comitor/account-sdk — lop cach ly nuot bay hanh vi ngam cua tang OIDC va la thu cho phep doi thu vien sau nay ma khong sua app. Xem AGENTS.md muc Xac thuc."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "lib/**",
+        "!lib/core/**",
+        "!lib/contracts/**",
+        "!lib/catalog/**",
+        "!lib/i18n/**",
+        "!lib/api/response.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@comitor/ui", "@comitor/ui/*"],
+                    "message": "Tang du lieu (lib/*.ts, lib/account/, lib/api/) KHONG duoc import @comitor/ui. Keo goi giao dien vao day la keo ca React theo, va khi do createTask/seed/job nen khong chay duoc bang tsx nua (SyntaxError: react does not provide useLayoutEffect). Hang dung chung ma ca giao dien lan may chu can thi de o lib/core/. Xem docs/kien-truc-ung-dung.md muc 2, hang D."
+                  },
+                  {
+                    "group": ["better-auth", "better-auth/*"],
+                    "message": "Khong app nao ngoai comitor-account duoc import better-auth. Xac thuc di qua @comitor/account-sdk. Xem AGENTS.md muc Xac thuc."
+                  },
+                  {
+                    "group": ["next/navigation", "next/link", "next/image", "next/router"],
+                    "message": "Tang du lieu KHONG duoc import tinh next/navigation, next/link, next/image. Chung keo theo runtime client cua React, va khi do lib/ khong nap duoc bang tsx nua — pnpm seed, job nen va script bao tri deu chet theo (da gap that: SyntaxError react does not provide useLayoutEffect). Can mot helper cua Next thi dung import() DONG trong chinh ham can no — xem requireReadPermission. next/headers va next/server thi KHONG bi cam: chung chi chay o may chu. Xem docs muc 2, hang D."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

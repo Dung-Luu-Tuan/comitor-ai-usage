@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quản lý AI nội bộ</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Quản lý sử dụng AI</h1>
+      <p class="muted">Key hãng ở web này. Dev nhận một mã nội bộ, hỏi AI trên VS Code / Cursor.</p>
+    </div>
+    <button type="button" id="logout" hidden>Đăng xuất</button>
+  </header>
+
+  <section id="login-card" class="card">
+    <h2>Đăng nhập admin</h2>
+    <form id="login-form">
+      <label>Mật khẩu <input id="password" type="password" autocomplete="current-password" /></label>
+      <button type="submit">Vào</button>
+    </form>
+    <p class="muted">Mặc định <code>comitor-dev</code> (file <code>.env</code>).</p>
+  </section>
+
+  <main id="app" hidden>
+    <section class="card" id="status"></section>
+
+    <section class="card">
+      <h2>Key hãng (chỉ admin)</h2>
+      <form id="vendor-form">
+        <label>Claude <input id="key-claude" type="password" autocomplete="off" placeholder="sk-ant-…" /></label>
+        <label>Grok <input id="key-grok" type="password" autocomplete="off" placeholder="xai-…" /></label>
+        <label>Gemini <input id="key-gemini" type="password" autocomplete="off" placeholder="AIza…" /></label>
+        <button type="submit">Lưu key</button>
+      </form>
+      <p class="muted">Ô trống = giữ key cũ. Chưa dán thì vẫn tạo được mã dev; hỏi AI sẽ báo thiếu key.</p>
+    </section>
+
+    <section class="card">
+      <h2>Cấp mã cho dev</h2>
+      <form id="create-form" class="row">
+        <label>Tên người <input id="user-name" placeholder="Nguyễn Văn A" required /></label>
+        <label>Trần USD (0 = không trần) <input id="user-budget" type="number" min="0" step="0.5" value="10" required /></label>
+        <button type="submit">Tạo mã</button>
+      </form>
+      <p id="new-key" class="notice" hidden></p>
+      <div class="table-wrap"><table id="users-table"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Nhật ký</h2>
+      <button type="button" id="refresh-logs">Tải lại</button>
+      <div class="table-wrap"><table id="logs-table"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Gợi ý model</h2>
+      <table>
+        <thead><tr><th>Việc</th><th>Model trên menu</th></tr></thead>
+        <tbody>
+          <tr><td>Feature hằng ngày</td><td><code>claude-sonnet-4-6</code></td></tr>
+          <tr><td>Hỏi nhanh, tóm tắt</td><td><code>gemini-2.5-flash</code></td></tr>
+          <tr><td>Khi cần Grok</td><td><code>grok-3</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Dev khai mã</h2>
+      <p>URL máy này: <code id="origin"></code></p>
+      <h3>Claude Code (VS Code) — Claude</h3>
+      <pre id="snippet-claude"></pre>
+      <h3>Cline / Continue (VS Code) — Claude, Grok, Gemini</h3>
+      <p>Base URL <code id="openai-base"></code> · API key = mã nội bộ · chọn model trên chat.</p>
+      <h3>Cursor Chat / Agent</h3>
+      <p>OpenAI API Key = mã nội bộ. Override Base URL = <code id="openai-base-2"></code>. Add model: <code>claude-sonnet-4-6</code>, <code>grok-3</code>, <code>gemini-2.5-flash</code>.</p>
+    </section>
+  </main>
+
+  <p id="error" class="error" hidden></p>
+  <script src="/app.js"></script>
+</body>
+</html>

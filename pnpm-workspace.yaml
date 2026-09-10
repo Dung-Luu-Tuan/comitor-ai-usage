@@ -1,0 +1,45 @@
+# Prisma cần chạy script cài đặt (tải query engine). pnpm 11 chặn script của dependency theo mặc
+# định; không cho phép ở đây thì `prisma generate` gãy vì thiếu engine.
+# esbuild là của tsx — thứ chạy thẳng file .ts cho seed và hai script kiểm tra trong `scripts/`.
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  prisma: true
+  esbuild: true
+  # Hai gói dưới đây đi kèm next-intl. CỐ Ý để `false`: chúng chỉ phục vụ tính năng TRÍCH XUẤT
+  # chuỗi (`experimental.extract`) mà starter không bật — chuỗi ở đây viết tay vào
+  # `messages/*.json`, không sinh từ mã. Cho phép build chúng là tải thêm native binary cho một
+  # đường không ai đi.
+  "@parcel/watcher": false
+  "@swc/core": false
+
+# ── VÌ SAO HAI GÓI @comitor ĐƯỢC MIỄN NGƯỠNG TUỔI ────────────────────────────────────────────
+# pnpm chặn gói vừa publish (`minimumReleaseAge`) để một gói bị chiếm quyền không kịp lan ra. Luật
+# đó đúng với registry công cộng, nhưng hai gói dưới đây do CHÍNH Comitor phát hành: chờ chúng
+# "đủ tuổi" chỉ làm chậm đúng vòng lặp mà nó không bảo vệ được gì.
+#
+# ⚠ LIỆT KÊ THEO TÊN, KHÔNG THEO PHIÊN BẢN. Bản trước ghi tay 12 phiên bản cụ thể, và danh sách đó
+# đã có LỖ (thiếu 1.1.x, 1.2.x, 1.3.0–1.3.2) trong khi `package.json` khai `^1.3.4` — một dải MỞ.
+# Hậu quả là một cạm bẫy đã được ghi vào AGENTS.md mà không ai chữa được tận gốc:
+#
+#     pnpm add @comitor/ui@<bản mới>   →   chạy xong, MÃ THOÁT 0, phiên bản KHÔNG ĐỔI
+#
+# Lý do miễn trừ không phụ thuộc phiên bản nào cả — nó là "gói này do chúng ta phát hành" — nên
+# điều kiện miễn trừ cũng không được phụ thuộc phiên bản.
+minimumReleaseAgeExclude:
+  - "@comitor/ui"
+  - "@comitor/account-sdk"
+
+# Vá lỗ hổng ở gói ĐI KÈM mà không nâng được bằng đường thường: gói CHA ghim cứng bản dễ tổn
+# thương, nên không có phiên bản nào của nó chữa được.
+#
+# ⚠ PHẢI ĐẶT Ở ĐÂY, KHÔNG PHẢI TRONG `package.json`. pnpm 11 bỏ qua khối `overrides` trong
+# package.json **trong im lặng** — cài xong, `pnpm audit` vẫn đỏ, và không có gì nói vì sao.
+#
+# ⚠ MỖI DÒNG PHẢI CÓ ĐIỀU KIỆN GỠ. Một override không kèm điều kiện sẽ sống mãi sau khi hết cần,
+# rồi thành thứ ghim cả cây phụ thuộc vào một bản cũ mà không ai dám động.
+overrides:
+  # deepmerge-ts <8 — HIGH (stack exhaustion). Đường: @prisma/config ← prisma. Cả 43 bản
+  # @prisma/config từng publish, kể cả 7.10.0, đều ghim cứng 7.1.5 — nên NÂNG PRISMA KHÔNG VÁ ĐƯỢC.
+  # GỠ KHI: `pnpm why deepmerge-ts` cho thấy @prisma/config đã đi sang >=8.
+  deepmerge-ts: "^8.0.2"
