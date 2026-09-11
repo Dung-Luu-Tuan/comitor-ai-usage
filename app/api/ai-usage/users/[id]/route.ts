@@ -33,5 +33,5 @@ export const PATCH = withApiErrors(async (request: Request, context: RouteContex
     throw ApiError.validation("Budget payload failed validation.");
   }
 
-  return apiOk(setAiUsageUserBudget(routeId(id), parsed.data.maxBudget));
+  return apiOk(await setAiUsageUserBudget(session.workspace.id, routeId(id), parsed.data.maxBudget));
 });

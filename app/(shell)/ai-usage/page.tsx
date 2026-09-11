@@ -10,7 +10,7 @@ import { AiUsagePanel } from "./ai-usage-panel";
  * `/ai-usage` — giao diện admin của cổng LLM nội bộ, dựng bằng `@comitor/ui`.
  *
  * Cổng hỏi AI vẫn là Express `ai-gateway` cổng 3100 (Claude Code / Cline không đi qua phiên
- * Account). Trang này chỉ CẤP MÃ, dán key hãng và đọc nhật ký — cùng file JSON mà Express đọc.
+ * Account). Trang này cấp mã, dán key hãng và đọc nhật ký — cùng ba bảng PostgreSQL mà Express đọc.
  */
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("nav");
@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AiUsagePage() {
   const session = await requireSession();
   await requireReadPermission(session.workspace.id, session.role, "app.settings");
-  const snapshot = getAiUsageSnapshot();
+  const snapshot = await getAiUsageSnapshot(session.workspace.id);
   const rawLocale = await getLocale();
 
   return <AiUsagePanel snapshot={snapshot} locale={isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE} />;

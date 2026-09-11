@@ -2,11 +2,30 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
-import { handleChatCompletions, handleMessages, handleModels } from "./lib/proxy.js";
-import { loadStore, maskKey } from "./lib/store.js";
-import { blockUser, createUser, listLogs, listUsers, setUserBudget, setVendorKeys, vendorStatus } from "./lib/team.js";
+import {
+  handleChatCompletions,
+  handleGeminiGenerate,
+  handleImageGenerations,
+  handleMessages,
+  handleModels,
+  handleVideos
+} from "./lib/proxy.js";
+import { maskKey } from "./lib/store.js";
+import {
+  blockUser,
+  createUser,
+  listLogs,
+  listUsers,
+  loadVendorKeys,
+  resolveAdminWorkspaceId,
+  setUserBudget,
+  setVendorKeys,
+  VENDORS,
+  vendorStatus
+} from "./lib/team.js";
 
 const root = dirname(fileURLToPath(import.meta.url));
+loadDotenv(join(root, "..", ".env"));
 loadDotenv(join(root, ".env"));
 
 const PORT = Number(process.env.PORT) || 3100;
@@ -29,9 +48,12 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "32mb" }));
 app.use(express.static(join(root, "public")));
 
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, vendors: vendorStatus() });
-});
+app.get(
+  "/health",
+  wrap(async (_req, res) => {
+    res.json({ ok: true, vendors: await vendorStatus() });
+  })
+);
 app.get("/health/liveliness", (_req, res) => {
   res.send("ok");
 });
@@ -40,6 +62,9 @@ app.post("/v1/chat/completions", wrap(handleChatCompletions));
 app.post("/chat/completions", wrap(handleChatCompletions));
 app.post("/v1/messages", wrap(handleMessages));
 app.post("/messages", wrap(handleMessages));
+app.post("/v1/images/generations", wrap(handleImageGenerations));
+app.post("/v1/videos", wrap(handleVideos));
+app.post(/^\/v1(?:beta)?\/models\/[^/]+:(streamGenerateContent|generateContent)$/, wrap(handleGeminiGenerate));
 app.get("/v1/models", handleModels);
 app.get("/models", handleModels);
 
@@ -51,82 +76,112 @@ app.post("/api/login", (req, res) => {
   res.json({ token: ADMIN_PASSWORD });
 });
 
-app.get("/api/health", requireAdmin, (_req, res) => {
-  const keys = loadStore().vendorKeys;
-  res.json({
-    ok: true,
-    gateway: true,
-    port: PORT,
-    vendorKeys: vendorStatus(),
-    vendorPreview: {
-      claude: maskKey(keys.claude),
-      grok: maskKey(keys.grok),
-      gemini: maskKey(keys.gemini)
+app.get(
+  "/api/health",
+  requireAdmin,
+  wrap(async (_req, res) => {
+    const workspaceId = await resolveAdminWorkspaceId();
+    const keys = await loadVendorKeys(workspaceId);
+    const status = await vendorStatus();
+    res.json({
+      ok: true,
+      gateway: true,
+      port: PORT,
+      vendors: VENDORS.map((vendor) => ({
+        id: vendor.id,
+        section: vendor.section,
+        placeholder: vendor.placeholder,
+        ready: Boolean(status[vendor.id]),
+        preview: maskKey(keys[vendor.id] ?? "")
+      })),
+      vendorKeys: status,
+      vendorPreview: Object.fromEntries(VENDORS.map((vendor) => [vendor.id, maskKey(keys[vendor.id] ?? "")]))
+    });
+  })
+);
+
+app.put(
+  "/api/vendors",
+  requireAdmin,
+  wrap(async (req, res) => {
+    await setVendorKeys(req.body ?? {});
+    res.json({ ok: true, vendorKeys: await vendorStatus() });
+  })
+);
+
+app.get(
+  "/api/users",
+  requireAdmin,
+  wrap(async (_req, res) => {
+    const users = await listUsers();
+    res.json({ users: users.map((user) => ({ ...user, key: undefined })) });
+  })
+);
+
+app.post(
+  "/api/users",
+  requireAdmin,
+  wrap(async (req, res) => {
+    const name = String(req.body?.name ?? "").trim();
+    const maxBudgetUsd = Number(req.body?.maxBudget);
+    if (!name) {
+      res.status(400).json({ error: "Nhập tên người dùng." });
+      return;
     }
-  });
-});
+    if (!Number.isFinite(maxBudgetUsd) || maxBudgetUsd < 0) {
+      res.status(400).json({ error: "Trần tiền (USD) không hợp lệ." });
+      return;
+    }
+    const user = await createUser({ name, maxBudgetUsd });
+    res.json({
+      id: user.id,
+      name: user.name,
+      key: user.key,
+      maxBudgetUsd: user.maxBudgetUsd,
+      notice: "Copy mã ngay. Sau này web chỉ hiện bản rút gọn."
+    });
+  })
+);
 
-app.put("/api/vendors", requireAdmin, (req, res) => {
-  setVendorKeys({
-    claude: req.body?.claude,
-    grok: req.body?.grok,
-    gemini: req.body?.gemini
-  });
-  res.json({ ok: true, vendorKeys: vendorStatus() });
-});
+app.post(
+  "/api/users/:id/block",
+  requireAdmin,
+  wrap(async (req, res) => {
+    const blocked = req.body?.blocked !== false;
+    const user = await blockUser(req.params.id, blocked);
+    if (!user) {
+      res.status(404).json({ error: "Không thấy người dùng." });
+      return;
+    }
+    res.json({ ok: true, blocked: user.blocked });
+  })
+);
 
-app.get("/api/users", requireAdmin, (_req, res) => {
-  res.json({ users: listUsers().map((user) => ({ ...user, key: undefined })) });
-});
+app.patch(
+  "/api/users/:id",
+  requireAdmin,
+  wrap(async (req, res) => {
+    const maxBudgetUsd = Number(req.body?.maxBudget);
+    if (!Number.isFinite(maxBudgetUsd) || maxBudgetUsd < 0) {
+      res.status(400).json({ error: "Trần tiền (USD) không hợp lệ." });
+      return;
+    }
+    const user = await setUserBudget(req.params.id, maxBudgetUsd);
+    if (!user) {
+      res.status(404).json({ error: "Không thấy người dùng." });
+      return;
+    }
+    res.json({ ok: true, maxBudgetUsd: user.maxBudgetUsd });
+  })
+);
 
-app.post("/api/users", requireAdmin, (req, res) => {
-  const name = String(req.body?.name ?? "").trim();
-  const maxBudgetUsd = Number(req.body?.maxBudget);
-  if (!name) {
-    res.status(400).json({ error: "Nhập tên người dùng." });
-    return;
-  }
-  if (!Number.isFinite(maxBudgetUsd) || maxBudgetUsd < 0) {
-    res.status(400).json({ error: "Trần tiền (USD) không hợp lệ." });
-    return;
-  }
-  const user = createUser({ name, maxBudgetUsd });
-  res.json({
-    id: user.id,
-    name: user.name,
-    key: user.key,
-    maxBudgetUsd: user.maxBudgetUsd,
-    notice: "Copy mã ngay. Sau này web chỉ hiện bản rút gọn."
-  });
-});
-
-app.post("/api/users/:id/block", requireAdmin, (req, res) => {
-  const blocked = req.body?.blocked !== false;
-  const user = blockUser(req.params.id, blocked);
-  if (!user) {
-    res.status(404).json({ error: "Không thấy người dùng." });
-    return;
-  }
-  res.json({ ok: true, blocked: user.blocked });
-});
-
-app.patch("/api/users/:id", requireAdmin, (req, res) => {
-  const maxBudgetUsd = Number(req.body?.maxBudget);
-  if (!Number.isFinite(maxBudgetUsd) || maxBudgetUsd < 0) {
-    res.status(400).json({ error: "Trần tiền (USD) không hợp lệ." });
-    return;
-  }
-  const user = setUserBudget(req.params.id, maxBudgetUsd);
-  if (!user) {
-    res.status(404).json({ error: "Không thấy người dùng." });
-    return;
-  }
-  res.json({ ok: true, maxBudgetUsd: user.maxBudgetUsd });
-});
-
-app.get("/api/logs", requireAdmin, (_req, res) => {
-  res.json({ logs: listLogs() });
-});
+app.get(
+  "/api/logs",
+  requireAdmin,
+  wrap(async (_req, res) => {
+    res.json({ logs: await listLogs() });
+  })
+);
 
 app.use((error, req, res, _next) => {
   const status = error.status && error.status >= 400 ? error.status : 500;
@@ -138,7 +193,12 @@ app.use((error, req, res, _next) => {
     });
     return;
   }
-  if (req.path.includes("/chat/completions")) {
+  if (
+    req.path.includes("/chat/completions") ||
+    req.path.includes("/images") ||
+    req.path.includes("/videos") ||
+    req.path.includes("GenerateContent")
+  ) {
     res.status(status).json({ error: { message, type: "invalid_request_error" } });
     return;
   }

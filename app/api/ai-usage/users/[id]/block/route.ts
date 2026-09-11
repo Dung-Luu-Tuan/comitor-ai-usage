@@ -33,5 +33,5 @@ export const POST = withApiErrors(async (request: Request, context: RouteContext
     throw ApiError.validation("Block payload failed validation.");
   }
 
-  return apiOk(setAiUsageUserBlocked(routeId(id), parsed.data.blocked));
+  return apiOk(await setAiUsageUserBlocked(session.workspace.id, routeId(id), parsed.data.blocked));
 });

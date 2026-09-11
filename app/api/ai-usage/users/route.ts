@@ -25,5 +25,5 @@ export const POST = withApiErrors(async (request: Request) => {
     throw ApiError.validation("User payload failed validation.");
   }
 
-  return apiOk(createAiUsageUser(parsed.data), { status: 201 });
+  return apiOk(await createAiUsageUser(session.workspace.id, parsed.data), { status: 201 });
 });

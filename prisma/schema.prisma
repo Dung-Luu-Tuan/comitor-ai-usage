@@ -404,3 +404,65 @@ model WebhookEvent {
   @@index([receivedAt])
   @@map("webhook_events")
 }
+
+/// Key hãng — một hàng (workspace, vendor). Thêm hãng = thêm dòng catalog, không migration cột.
+///
+/// ── VÌ SAO KHÔNG MỘT CỘT JSON ────────────────────────────────────────────────────────────
+/// `tsc` không kiểm được key trong JSON. Mỗi hãng một hàng thì cổng 3100 tra `vendor = $1`
+/// và trang admin lặp catalog.
+///
+/// ⚠ Key lưu plaintext. RDS mã hoá đĩa; không dùng Vault/KMS. Ô trống trên form = giữ key cũ.
+model AiVendorSecret {
+  workspaceId String   @map("workspace_id")
+  vendor      String
+  secret      String   @default("")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@id([workspaceId, vendor])
+  @@index([workspaceId])
+  @@map("ai_vendor_secrets")
+}
+
+/// Người được cấp mã nội bộ `sk-team-…`.
+///
+/// `key` duy nhất TOÀN schema: cổng 3100 tra mã Bearer mà không có phiên Account, nên không biết
+/// `workspaceId` trước. Sau khi khớp mã thì hàng mang `workspaceId` để lấy key hãng đúng nhà.
+model AiTeamUser {
+  id           String   @id
+  workspaceId  String   @map("workspace_id")
+  name         String
+  /// Mã đầy đủ. Trang admin chỉ hiện bản rút gọn; bản đủ trả đúng một lần lúc cấp.
+  key          String   @unique
+  maxBudgetUsd Float    @map("max_budget_usd")
+  spendUsd     Float    @default(0) @map("spend_usd")
+  blocked      Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  logs AiUsageLog[]
+
+  @@index([workspaceId])
+  @@map("ai_team_users")
+}
+
+/// Nhật ký token / tiền ước tính. Trang admin đọc 200 dòng mới nhất của workspace.
+model AiUsageLog {
+  id           String   @id @default(cuid())
+  workspaceId  String   @map("workspace_id")
+  userId       String   @map("user_id")
+  /// Tên lúc ghi — tên gõ trên form cấp mã, không phải tên Account.
+  name         String
+  model        String
+  provider     String
+  inputTokens  Int      @map("input_tokens")
+  outputTokens Int      @map("output_tokens")
+  /// Ước tính LiteLLM. `null` khi bảng giá không có id đó — vẫn ghi token.
+  usd          Float?
+  ok           Boolean
+  error        String?
+  at           DateTime @default(now())
+
+  user AiTeamUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, at])
+  @@map("ai_usage_logs")
+}

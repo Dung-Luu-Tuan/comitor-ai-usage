@@ -15,6 +15,62 @@ Một mục không có mục thứ hai là một mục chỉ hữu ích cho ngư
 
 ---
 
+## v0.1.4 — 2026-09-11
+
+PATCH: cron tuần tải bảng giá LiteLLM (GitHub Actions thứ Hai 10:00 ICT, mở PR nếu đổi). Cổng 3100 đọc lại file theo mtime, không cần restart.
+
+### Khung đổi gì
+
+Không.
+
+### Module đã sinh ra phải làm gì
+
+Không áp dụng — đây là sản phẩm AI Usage. `pnpm job:catalog-prices` nếu hạ tầng tự hẹn giờ; hoặc để workflow `.github/workflows/catalog-prices.yml` chạy.
+
+---
+
+## v0.1.3 — 2026-09-11
+
+PATCH: ước tính USD tra từ bản chụp LiteLLM; bảng Model và giá liệt kê mọi model có đơn giá của từng hãng (cuộn trong thẻ). Id không có giá thì nhật ký ghi token, để trống tiền.
+
+### Khung đổi gì
+
+Không.
+
+### Module đã sinh ra phải làm gì
+
+Không áp dụng — đây là sản phẩm AI Usage. `pnpm catalog:prices` khi cần số mới; `pnpm exec prisma migrate deploy` (migration `20260911090000_ai_usage_log_usd_optional`).
+
+---
+
+## v0.1.2 — 2026-09-11
+
+PATCH: thêm đủ hãng chat / ảnh / video vào catalog; mỗi key một hàng `ai_vendor_secrets`; cổng 3100 nhận OpenAI / DeepSeek / Mistral và gọi endpoint ảnh + video.
+
+### Khung đổi gì
+
+Không.
+
+### Module đã sinh ra phải làm gì
+
+Không áp dụng — đây là sản phẩm AI Usage. `pnpm exec prisma migrate deploy` (migration `20260911040000_ai_vendor_secrets`), rồi khởi động lại app 3050 và cổng 3100.
+
+---
+
+## v0.1.1 — 2026-09-11
+
+PATCH: key hãng, mã nội bộ và nhật ký usage lưu trên **PostgreSQL** (schema `ai-usage`), không còn file `store.json` làm kho chính.
+
+### Khung đổi gì
+
+Không.
+
+### Module đã sinh ra phải làm gì
+
+Không áp dụng — đây là sản phẩm AI Usage. Deploy: `pnpm exec prisma migrate deploy`, rồi chạy app 3050 và cổng 3100 với **cùng** `DATABASE_URL`. File JSON cũ được nhập một lần khi mở `/ai-usage` nếu workspace còn trống.
+
+---
+
 ## v0.1.0 — 2026-09-10
 
 PATCH: tách **Comitor AI Usage** thành module riêng (`APP_ID=ai-usage`, cổng 3050).

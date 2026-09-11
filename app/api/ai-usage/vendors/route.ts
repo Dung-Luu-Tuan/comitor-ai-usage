@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/core/api-error";
 import { requirePermission } from "@/lib/permissions";
 
 /**
- * `PUT /api/ai-usage/vendors` — lưu key hãng vào file JSON của cổng LLM.
+ * `PUT /api/ai-usage/vendors` — lưu key hãng vào PostgreSQL (`ai_vendor_secrets`).
  *
  * Ô trống = giữ key cũ. Không có thẻ phiên bản: mất một key nhìn thấy được trên trang và dán lại
  * được; khác ma trận phân quyền.
@@ -28,5 +28,5 @@ export const PUT = withApiErrors(async (request: Request) => {
     throw ApiError.validation("Vendor payload failed validation.");
   }
 
-  return apiOk(setAiUsageVendors(parsed.data));
+  return apiOk(await setAiUsageVendors(session.workspace.id, parsed.data));
 });

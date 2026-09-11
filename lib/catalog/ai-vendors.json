@@ -1,0 +1,119 @@
+{
+  "vendors": [
+    {
+      "id": "claude",
+      "section": "chat",
+      "placeholder": "sk-ant-…",
+      "modalities": ["chat"]
+    },
+    {
+      "id": "openai",
+      "section": "chat",
+      "placeholder": "sk-…",
+      "modalities": ["chat", "image", "video"]
+    },
+    {
+      "id": "grok",
+      "section": "chat",
+      "placeholder": "xai-…",
+      "modalities": ["chat", "image", "video"]
+    },
+    {
+      "id": "gemini",
+      "section": "chat",
+      "placeholder": "AIza…",
+      "modalities": ["chat", "image", "video"]
+    },
+    {
+      "id": "deepseek",
+      "section": "chat",
+      "placeholder": "sk-…",
+      "modalities": ["chat"]
+    },
+    {
+      "id": "mistral",
+      "section": "chat",
+      "placeholder": "…",
+      "modalities": ["chat"]
+    },
+    {
+      "id": "flux",
+      "section": "image",
+      "placeholder": "…",
+      "modalities": ["image"]
+    },
+    {
+      "id": "stability",
+      "section": "image",
+      "placeholder": "sk-…",
+      "modalities": ["image"]
+    },
+    {
+      "id": "ideogram",
+      "section": "image",
+      "placeholder": "…",
+      "modalities": ["image"]
+    },
+    {
+      "id": "runway",
+      "section": "video",
+      "placeholder": "…",
+      "modalities": ["video"]
+    },
+    {
+      "id": "kling",
+      "section": "video",
+      "placeholder": "…",
+      "modalities": ["video"]
+    },
+    {
+      "id": "luma",
+      "section": "video",
+      "placeholder": "…",
+      "modalities": ["video"]
+    },
+    {
+      "id": "seedance",
+      "section": "video",
+      "placeholder": "…",
+      "modalities": ["video"]
+    },
+    {
+      "id": "pika",
+      "section": "video",
+      "placeholder": "…",
+      "modalities": ["video"]
+    },
+    {
+      "id": "hailuo",
+      "section": "video",
+      "placeholder": "…",
+      "modalities": ["video"]
+    }
+  ],
+  "models": [
+    { "id": "claude-sonnet-4-6", "provider": "claude", "kind": "chat", "upstream": "claude-sonnet-4-5" },
+    { "id": "gpt-4o", "provider": "openai", "kind": "chat", "upstream": "gpt-4o" },
+    { "id": "gpt-5.4", "provider": "openai", "kind": "chat", "upstream": "gpt-5.4" },
+    { "id": "grok-3", "provider": "grok", "kind": "chat", "upstream": "grok-3" },
+    { "id": "gemini-3.6-flash", "provider": "gemini", "kind": "chat", "upstream": "gemini-3.6-flash" },
+    { "id": "deepseek-flash", "provider": "deepseek", "kind": "chat", "upstream": "deepseek-flash" },
+    { "id": "deepseek-v4-pro", "provider": "deepseek", "kind": "chat", "upstream": "deepseek-v4-pro" },
+    { "id": "mistral-large-latest", "provider": "mistral", "kind": "chat", "upstream": "mistral-large-latest" },
+    { "id": "gpt-image-1", "provider": "openai", "kind": "image", "upstream": "gpt-image-1" },
+    { "id": "grok-imagine-image", "provider": "grok", "kind": "image", "upstream": "grok-imagine-image" },
+    { "id": "gemini-imagen", "provider": "gemini", "kind": "image", "upstream": "imagen-4.0-generate-001" },
+    { "id": "flux-pro", "provider": "flux", "kind": "image", "upstream": "flux-kontext-pro" },
+    { "id": "stable-image-core", "provider": "stability", "kind": "image", "upstream": "core" },
+    { "id": "ideogram-v3", "provider": "ideogram", "kind": "image", "upstream": "V_3" },
+    { "id": "sora-2", "provider": "openai", "kind": "video", "upstream": "sora-2" },
+    { "id": "veo-3.1", "provider": "gemini", "kind": "video", "upstream": "veo-3.1-generate-preview" },
+    { "id": "grok-imagine-video", "provider": "grok", "kind": "video", "upstream": "grok-imagine-video" },
+    { "id": "runway-gen4", "provider": "runway", "kind": "video", "upstream": "gen4_turbo" },
+    { "id": "kling-v3", "provider": "kling", "kind": "video", "upstream": "kling-v3" },
+    { "id": "luma-ray", "provider": "luma", "kind": "video", "upstream": "ray-2" },
+    { "id": "seedance-2", "provider": "seedance", "kind": "video", "upstream": "seedance-2.0" },
+    { "id": "pika-2", "provider": "pika", "kind": "video", "upstream": "pika-2.2" },
+    { "id": "hailuo-2", "provider": "hailuo", "kind": "video", "upstream": "MiniMax-Hailuo-02" }
+  ]
+}

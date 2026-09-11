@@ -49,7 +49,7 @@
     }
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs", "**/*.jsx", "**/*.json", "!.next", "!node_modules"]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.mjs", "**/*.jsx", "**/*.json", "!.next", "!node_modules", "!lib/catalog/litellm-model-prices.json", "!lib/catalog/litellm-vendor-rates.json"]
   },
   "vcs": {
     "enabled": true,

@@ -22,6 +22,8 @@ Chép mẫu: `../comitor-account/scripts/seed.ts` (client `tasks-web` là khuôn
 
 Hồ sơ RDS: trong `.env` dùng `?schema=ai-usage` (schema riêng, không dùng `schema=starter`).
 
+Key hãng, mã `sk-team-…` và nhật ký nằm ở **PostgreSQL** (ba bảng `ai_vendor_secrets` / `ai_team_users` / `ai_usage_logs`) — cùng `DATABASE_URL` với phiên đăng nhập. Mỗi hãng một hàng `(workspace, vendor)`. Deploy: đưa biến đó cho cả app 3050 và cổng 3100.
+
 ```bat
 cd D:\develop\elines-source\comitor-ai-usage
 pnpm install
@@ -31,7 +33,7 @@ pnpm dev
 
 Mở http://localhost:3050 — chuyển vào `/ai-usage`.
 
-Cổng LLM: trong `ai-gateway` chạy `pnpm start` (cổng **3100**). Chỉ một tiến trình gateway.
+Cổng LLM: trong `ai-gateway` chạy `pnpm start` (cổng **3100**). Chỉ một tiến trình gateway. Nó đọc `DATABASE_URL` từ `../.env` nếu `ai-gateway/.env` không có dòng đó. Chat: `/v1/chat/completions` và `/v1/messages`. Ảnh: `POST /v1/images/generations`. Video: `POST /v1/videos`. Danh sách model: `GET /v1/models`. USD trên nhật ký tra từ bản chụp LiteLLM — cron tuần (`.github/workflows/catalog-prices.yml`) hoặc `pnpm job:catalog-prices`.
 
 Owner/admin của workspace đã bật app mới mới vào được trang quản lý.
 
@@ -379,7 +381,7 @@ Hộp thư Mailpit: <http://localhost:8026>.
 | `pnpm tenant:check` | Chặn truy vấn chọn hàng mà không lọc theo `workspaceId` |
 | `pnpm api:check` | Chặn route handler GHI thiếu `requirePermission()` |
 | `pnpm color:check` | Chặn mã màu viết thẳng vào mã của app |
-| `pnpm version:check` | Chặn `package.json` trôi khỏi `CHANGELOG.md` (số đó hiện ở chân thanh bên) |
+| `pnpm catalog:prices` / `pnpm job:catalog-prices` | Tải bảng giá LiteLLM, ghi bản chụp. Cron tuần: [`.github/workflows/catalog-prices.yml`](.github/workflows/catalog-prices.yml) (thứ Hai 10:00 ICT, mở PR nếu đổi). Hạ tầng tự vận hành thì hẹn `pnpm job:catalog-prices`, không `setInterval` trong Next |
 | `pnpm db:migrate` | `prisma migrate dev` — ⚠ **CHỈ máy phát triển**; lịch sử lệch thì nó DỪNG (thoát 130), KHÔNG tự reset |
 | `pnpm db:deploy` | `prisma migrate deploy` — lệnh dùng ở production/CI |
 | `pnpm db:check` | `schema.prisma` có đi trước `migrations/` không. Cần `SHADOW_DATABASE_URL` — nó đọc biến đó từ `.env` qua `node --env-file`, KHÔNG qua shell (pnpm không nạp `.env` vào shell) |

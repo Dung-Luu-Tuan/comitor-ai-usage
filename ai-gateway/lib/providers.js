@@ -1,23 +1,172 @@
-import { loadStore, vendorReady } from "./store.js";
-import { estimateTokens } from "./team.js";
+import { vendorReady } from "./store.js";
+import { estimateTokens, loadVendorKeys } from "./team.js";
 
-const ANTHROPIC_MODEL = {
-  "claude-sonnet-4-6": "claude-sonnet-4-5"
+const OPENAI_CHAT = {
+  openai: { url: "https://api.openai.com/v1/chat/completions", name: "OpenAI" },
+  grok: { url: "https://api.x.ai/v1/chat/completions", name: "Grok" },
+  deepseek: { url: "https://api.deepseek.com/v1/chat/completions", name: "DeepSeek" },
+  mistral: { url: "https://api.mistral.ai/v1/chat/completions", name: "Mistral" }
 };
 
-const GEMINI_MODEL = {
-  "gemini-2.5-flash": "gemini-2.5-flash"
-};
-
-export async function complete({ provider, modelId, messages, maxTokens }) {
-  if (provider === "claude") return completeAnthropic(modelId, messages, maxTokens);
-  if (provider === "grok") return completeGrok(modelId, messages, maxTokens);
-  if (provider === "gemini") return completeGemini(modelId, messages, maxTokens);
-  throw fail(400, `Không hỗ trợ nhà ${provider}.`);
+export async function complete({ provider, modelId, upstream, messages, maxTokens, workspaceId }) {
+  if (provider === "claude") return completeAnthropic(upstream ?? modelId, messages, maxTokens, workspaceId);
+  if (provider === "gemini") return completeGemini(upstream ?? modelId, messages, maxTokens, workspaceId);
+  const openai = OPENAI_CHAT[provider];
+  if (openai) {
+    return completeOpenAICompat(openai, upstream ?? modelId, messages, maxTokens, workspaceId, provider);
+  }
+  throw fail(400, `Không hỗ trợ chat với nhà ${provider}.`);
 }
 
-async function completeAnthropic(modelId, messages, maxTokens) {
-  const key = requireVendor("claude");
+export async function generateImage({ provider, upstream, prompt, workspaceId }) {
+  const key = await requireVendor(workspaceId, provider);
+  if (provider === "openai") {
+    return postVendorJson(
+      "OpenAI",
+      "https://api.openai.com/v1/images/generations",
+      { authorization: `Bearer ${key}` },
+      { model: upstream, prompt, n: 1, size: "1024x1024" },
+      prompt
+    );
+  }
+  if (provider === "grok") {
+    return postVendorJson(
+      "Grok",
+      "https://api.x.ai/v1/images/generations",
+      { authorization: `Bearer ${key}` },
+      { model: upstream, prompt },
+      prompt
+    );
+  }
+  if (provider === "gemini") {
+    return postVendorJson(
+      "Gemini",
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(upstream)}:predict?key=${encodeURIComponent(key)}`,
+      {},
+      { instances: [{ prompt }], parameters: { sampleCount: 1 } },
+      prompt
+    );
+  }
+  if (provider === "flux") {
+    return postVendorJson(
+      "FLUX",
+      `https://api.bfl.ai/v1/${encodeURIComponent(upstream)}`,
+      { "x-key": key },
+      { prompt },
+      prompt
+    );
+  }
+  if (provider === "stability") {
+    const form = new FormData();
+    form.set("prompt", prompt);
+    form.set("output_format", "png");
+    const response = await fetch("https://api.stability.ai/v2beta/stable-image/generate/core", {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, accept: "application/json" },
+      body: form
+    });
+    return packVendorResponse("Stability", response, prompt);
+  }
+  if (provider === "ideogram") {
+    return postVendorJson(
+      "Ideogram",
+      "https://api.ideogram.ai/v1/ideogram-v3/generate",
+      { "api-key": key },
+      { prompt, model: upstream },
+      prompt
+    );
+  }
+  throw fail(400, `Không hỗ trợ ảnh với nhà ${provider}.`);
+}
+
+export async function generateVideo({ provider, upstream, prompt, workspaceId }) {
+  const key = await requireVendor(workspaceId, provider);
+  if (provider === "openai") {
+    return postVendorJson(
+      "OpenAI",
+      "https://api.openai.com/v1/videos",
+      { authorization: `Bearer ${key}` },
+      { model: upstream, prompt },
+      prompt
+    );
+  }
+  if (provider === "gemini") {
+    return postVendorJson(
+      "Gemini",
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(upstream)}:predictLongRunning?key=${encodeURIComponent(key)}`,
+      {},
+      { instances: [{ prompt }] },
+      prompt
+    );
+  }
+  if (provider === "grok") {
+    return postVendorJson(
+      "Grok",
+      "https://api.x.ai/v1/videos/generations",
+      { authorization: `Bearer ${key}` },
+      { model: upstream, prompt },
+      prompt
+    );
+  }
+  if (provider === "runway") {
+    return postVendorJson(
+      "Runway",
+      "https://api.dev.runwayml.com/v1/text_to_video",
+      { authorization: `Bearer ${key}`, "X-Runway-Version": "2024-11-06" },
+      { model: upstream, promptText: prompt },
+      prompt
+    );
+  }
+  if (provider === "kling") {
+    return postVendorJson(
+      "Kling",
+      "https://api.klingai.com/v1/videos/text2video",
+      { authorization: `Bearer ${key}` },
+      { model_name: upstream, prompt },
+      prompt
+    );
+  }
+  if (provider === "luma") {
+    return postVendorJson(
+      "Luma",
+      "https://api.lumalabs.ai/dream-machine/v1/generations",
+      { authorization: `Bearer ${key}` },
+      { prompt, model: upstream },
+      prompt
+    );
+  }
+  if (provider === "seedance") {
+    return postVendorJson(
+      "Seedance",
+      "https://ark.ap-southeast.bytepluses.com/api/v3/contents/generations/tasks",
+      { authorization: `Bearer ${key}` },
+      { model: upstream, content: [{ type: "text", text: prompt }] },
+      prompt
+    );
+  }
+  if (provider === "pika") {
+    return postVendorJson(
+      "Pika",
+      "https://api.pika.art/v1/generate",
+      { authorization: `Bearer ${key}` },
+      { prompt, model: upstream },
+      prompt
+    );
+  }
+  if (provider === "hailuo") {
+    return postVendorJson(
+      "Hailuo",
+      "https://api.minimax.io/v1/video_generation",
+      { authorization: `Bearer ${key}` },
+      { model: upstream, prompt },
+      prompt
+    );
+  }
+  throw fail(400, `Không hỗ trợ video với nhà ${provider}.`);
+}
+
+async function completeAnthropic(upstream, messages, maxTokens, workspaceId) {
+  const key = await requireVendor(workspaceId, "claude");
   const mapped = messagesToAnthropic(messages);
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -27,7 +176,7 @@ async function completeAnthropic(modelId, messages, maxTokens) {
       "anthropic-version": "2023-06-01"
     },
     body: JSON.stringify({
-      model: ANTHROPIC_MODEL[modelId] ?? "claude-sonnet-4-5",
+      model: upstream || "claude-sonnet-4-5",
       max_tokens: maxTokens,
       ...(mapped.system ? { system: mapped.system } : {}),
       messages: mapped.messages
@@ -45,37 +194,21 @@ async function completeAnthropic(modelId, messages, maxTokens) {
   };
 }
 
-async function completeGrok(_modelId, messages, maxTokens) {
-  const key = requireVendor("grok");
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${key}`
-    },
-    body: JSON.stringify({
-      model: "grok-3",
-      messages: messagesToOpenAI(messages),
-      max_tokens: maxTokens
-    })
-  });
-  const body = await readJson(response);
-  if (!response.ok) {
-    throw fail(response.status, vendorError("Grok", body));
-  }
-  const text = body.choices?.[0]?.message?.content ?? "";
-  return {
-    text,
-    inputTokens: body.usage?.prompt_tokens ?? estimateTokens(JSON.stringify(messages)),
-    outputTokens: body.usage?.completion_tokens ?? estimateTokens(text)
-  };
+function geminiBilledTokens(usage, messages, text) {
+  const inputTokens = usage.promptTokenCount ?? estimateTokens(JSON.stringify(messages));
+  // Google tính thinking vào output. `totalTokenCount - prompt` gồm candidates + thoughts.
+  const billedOutput =
+    usage.totalTokenCount != null && usage.promptTokenCount != null
+      ? Math.max(0, usage.totalTokenCount - usage.promptTokenCount)
+      : (usage.candidatesTokenCount ?? 0) + (usage.thoughtsTokenCount ?? 0);
+  const outputTokens = billedOutput > 0 ? billedOutput : estimateTokens(text);
+  return { inputTokens, outputTokens };
 }
 
-async function completeGemini(modelId, messages, maxTokens) {
-  const key = requireVendor("gemini");
-  const upstream = GEMINI_MODEL[modelId] ?? "gemini-2.5-flash";
+async function completeGemini(upstream, messages, maxTokens, workspaceId) {
+  const key = await requireVendor(workspaceId, "gemini");
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${upstream}:generateContent?key=${encodeURIComponent(key)}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(upstream)}:generateContent?key=${encodeURIComponent(key)}`,
     {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -93,8 +226,54 @@ async function completeGemini(modelId, messages, maxTokens) {
   const usage = body.usageMetadata ?? {};
   return {
     text,
-    inputTokens: usage.promptTokenCount ?? estimateTokens(JSON.stringify(messages)),
-    outputTokens: usage.candidatesTokenCount ?? estimateTokens(text)
+    ...geminiBilledTokens(usage, messages, text)
+  };
+}
+
+async function completeOpenAICompat(spec, upstream, messages, maxTokens, workspaceId, provider) {
+  const key = await requireVendor(workspaceId, provider);
+  const response = await fetch(spec.url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${key}`
+    },
+    body: JSON.stringify({
+      model: upstream,
+      messages: messagesToOpenAI(messages),
+      max_tokens: maxTokens
+    })
+  });
+  const body = await readJson(response);
+  if (!response.ok) {
+    throw fail(response.status, vendorError(spec.name, body));
+  }
+  const text = body.choices?.[0]?.message?.content ?? "";
+  return {
+    text,
+    inputTokens: body.usage?.prompt_tokens ?? estimateTokens(JSON.stringify(messages)),
+    outputTokens: body.usage?.completion_tokens ?? estimateTokens(text)
+  };
+}
+
+async function postVendorJson(name, url, headers, payload, prompt) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json", ...headers },
+    body: JSON.stringify(payload)
+  });
+  return packVendorResponse(name, response, prompt);
+}
+
+async function packVendorResponse(name, response, prompt) {
+  const body = await readJson(response);
+  if (!response.ok) {
+    throw fail(response.status, vendorError(name, body));
+  }
+  return {
+    body,
+    inputTokens: estimateTokens(prompt),
+    outputTokens: 0
   };
 }
 
@@ -108,8 +287,9 @@ async function readJson(response) {
   }
 }
 
-function requireVendor(name) {
-  const key = loadStore().vendorKeys[name];
+async function requireVendor(workspaceId, name) {
+  const keys = await loadVendorKeys(workspaceId);
+  const key = keys[name];
   if (!vendorReady(key)) {
     throw fail(503, `Chưa có key ${name} trên web admin. Hỏi AI sẽ chạy khi admin dán key.`);
   }

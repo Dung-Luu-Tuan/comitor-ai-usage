@@ -9,11 +9,8 @@ export const setAiUsageBudgetSchema = z.object({
   maxBudget: z.number().finite().min(0)
 });
 
-export const setAiUsageVendorsSchema = z.object({
-  claude: z.string().optional(),
-  grok: z.string().optional(),
-  gemini: z.string().optional()
-});
+/** Id hãng hợp lệ nằm ở catalog; tầng này chỉ nhận object chuỗi → chuỗi. */
+export const setAiUsageVendorsSchema = z.record(z.string(), z.string().optional());
 
 export const setAiUsageBlockedSchema = z.object({
   blocked: z.boolean()

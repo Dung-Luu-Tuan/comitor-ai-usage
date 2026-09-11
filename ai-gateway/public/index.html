@@ -30,18 +30,16 @@
     <section class="card">
       <h2>Key hãng (chỉ admin)</h2>
       <form id="vendor-form">
-        <label>Claude <input id="key-claude" type="password" autocomplete="off" placeholder="sk-ant-…" /></label>
-        <label>Grok <input id="key-grok" type="password" autocomplete="off" placeholder="xai-…" /></label>
-        <label>Gemini <input id="key-gemini" type="password" autocomplete="off" placeholder="AIza…" /></label>
+        <div id="vendor-fields"></div>
         <button type="submit">Lưu key</button>
       </form>
-      <p class="muted">Ô trống = giữ key cũ. Chưa dán thì vẫn tạo được mã dev; hỏi AI sẽ báo thiếu key.</p>
+      <p class="muted">Ô trống = giữ key cũ. Ảnh/video OpenAI·Grok·Gemini dùng cùng key chat của hãng đó.</p>
     </section>
 
     <section class="card">
       <h2>Cấp mã cho dev</h2>
       <form id="create-form" class="row">
-        <label>Tên người <input id="user-name" placeholder="Nguyễn Văn A" required /></label>
+        <label>Tên người <input id="user-name" required /></label>
         <label>Trần USD (0 = không trần) <input id="user-budget" type="number" min="0" step="0.5" value="10" required /></label>
         <button type="submit">Tạo mã</button>
       </form>
@@ -61,8 +59,13 @@
         <thead><tr><th>Việc</th><th>Model trên menu</th></tr></thead>
         <tbody>
           <tr><td>Feature hằng ngày</td><td><code>claude-sonnet-4-6</code></td></tr>
-          <tr><td>Hỏi nhanh, tóm tắt</td><td><code>gemini-2.5-flash</code></td></tr>
-          <tr><td>Khi cần Grok</td><td><code>grok-3</code></td></tr>
+          <tr><td>GPT / Cursor</td><td><code>gpt-4o</code></td></tr>
+          <tr><td>Hỏi nhanh</td><td><code>gemini-3.6-flash</code></td></tr>
+          <tr><td>Rẻ</td><td><code>deepseek-flash</code></td></tr>
+          <tr><td>Grok</td><td><code>grok-3</code></td></tr>
+          <tr><td>Mistral</td><td><code>mistral-large-latest</code></td></tr>
+          <tr><td>Ảnh</td><td><code>POST /v1/images/generations</code> · <code>gpt-image-1</code></td></tr>
+          <tr><td>Video</td><td><code>POST /v1/videos</code> · <code>sora-2</code></td></tr>
         </tbody>
       </table>
     </section>
@@ -71,11 +74,25 @@
       <h2>Dev khai mã</h2>
       <p>URL máy này: <code id="origin"></code></p>
       <h3>Claude Code (VS Code) — Claude</h3>
+      <ol>
+        <li>Cài extension Claude Code trong VS Code.</li>
+        <li>Ctrl+Shift+P → Preferences: Open User Settings (JSON).</li>
+        <li>Dán JSON dưới đây, thay sk-team-… bằng mã nội bộ. Không thêm /v1.</li>
+        <li>Reload Window rồi hỏi như bình thường.</li>
+      </ol>
       <pre id="snippet-claude"></pre>
+      <h3>Claude Desktop (ứng dụng trên máy)</h3>
+      <p class="muted">Desktop không đọc settings.json của VS Code.</p>
+      <ol>
+        <li>Mở ứng dụng Claude Desktop.</li>
+        <li>Help → Troubleshooting → Enable Developer Mode (app khởi động lại).</li>
+        <li>Developer → Configure Third-Party Inference.</li>
+        <li>Inference provider = Gateway · Credential kind = Static API key · Gateway base URL = địa chỉ cổng (không /v1) · Gateway API key = mã nội bộ · Auth scheme = Bearer.</li>
+      </ol>
       <h3>Cline / Continue (VS Code) — Claude, Grok, Gemini</h3>
       <p>Base URL <code id="openai-base"></code> · API key = mã nội bộ · chọn model trên chat.</p>
       <h3>Cursor Chat / Agent</h3>
-      <p>OpenAI API Key = mã nội bộ. Override Base URL = <code id="openai-base-2"></code>. Add model: <code>claude-sonnet-4-6</code>, <code>grok-3</code>, <code>gemini-2.5-flash</code>.</p>
+      <p>OpenAI API Key = mã nội bộ. Override Base URL = <code id="openai-base-2"></code>. Ảnh: <code>/v1/images/generations</code>. Video: <code>/v1/videos</code>.</p>
     </section>
   </main>
 

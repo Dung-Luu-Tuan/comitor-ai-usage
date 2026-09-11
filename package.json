@@ -1,6 +1,6 @@
 {
   "name": "comitor-ai-usage",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "packageManager": "pnpm@11.20.0",
   "engines": {
     "node": ">=24.0.0",
@@ -30,9 +30,10 @@
     "db:deploy": "prisma migrate deploy",
     "db:check": "SHADOW=\"$(node -e 'const fs=require(\"fs\");let v=process.env.SHADOW_DATABASE_URL;if(!v&&fs.existsSync(\".env\")){try{process.loadEnvFile(\".env\")}catch{}v=process.env.SHADOW_DATABASE_URL}if(!v){console.error(\"db:check: thiếu SHADOW_DATABASE_URL — đặt biến môi trường, hoặc thêm dòng đó vào .env\");process.exit(1)}process.stdout.write(v)')\" && prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url \"$SHADOW\" --exit-code",
     "db:studio": "prisma studio",
-    "setup:env": "tsx scripts/setup-env.ts",
+    "catalog:prices": "tsx scripts/sync-litellm-prices.ts",
     "seed": "tsx --conditions=react-server --env-file=.env scripts/seed.ts",
     "job:due-soon": "tsx --conditions=react-server --env-file=.env scripts/jobs/due-soon-reminders.ts",
+    "job:catalog-prices": "tsx scripts/jobs/catalog-prices.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm i18n:check && pnpm core:check && pnpm tenant:check && pnpm api:check && pnpm color:check && pnpm version:check && pnpm test && pnpm build"
   },
   "dependencies": {

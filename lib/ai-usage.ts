@@ -1,20 +1,21 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { AI_GATEWAY_ORIGIN } from "@/lib/catalog/ai-usage";
+import { AI_GATEWAY_ORIGIN, AI_VENDORS, isAiVendorId, isAiVendorSection } from "@/lib/catalog/ai-usage";
 import type { AiUsageLogView, AiUsageSnapshot, AiUsageUserView, CreatedAiUsageUser } from "@/lib/contracts/ai-usage";
 import type { CreateAiUsageUserInput, SetAiUsageVendorsInput } from "@/lib/core/ai-usage-input";
 import { ApiError } from "@/lib/core/api-error";
+import { prisma } from "@/lib/prisma";
 
 /**
- * Đọc/ghi `ai-gateway/data/store.json` — CÙNG file mà tiến trình Express cổng 3100 dùng.
+ * Key hãng, mã nội bộ và nhật ký — PostgreSQL schema `ai-usage` (cùng `DATABASE_URL` với phiên).
  *
- * ⚠ Không đưa sang Prisma: đây không phải dữ liệu theo `workspaceId` của module Công việc. Cổng
- * LLM phải đọc được key khi Claude Code gọi vào, kể cả khi không có phiên Account.
+ * Cổng Express 3100 đọc CÙNG ba bảng qua `pg`. File `ai-gateway/data/store.json` chỉ còn để nhập
+ * một lần nếu workspace còn trống.
  */
 
-interface StoreUser {
+interface LegacyStoreUser {
   id: string;
   name: string;
   key: string;
@@ -24,7 +25,7 @@ interface StoreUser {
   createdAt: string;
 }
 
-interface StoreLog {
+interface LegacyStoreLog {
   at: string;
   userId: string;
   name: string;
@@ -37,49 +38,10 @@ interface StoreLog {
   error: string | null;
 }
 
-interface Store {
+interface LegacyStore {
   vendorKeys: { claude: string; grok: string; gemini: string };
-  users: StoreUser[];
-  logs: StoreLog[];
-}
-
-function emptyStore(): Store {
-  return { vendorKeys: { claude: "", grok: "", gemini: "" }, users: [], logs: [] };
-}
-
-function storePath(): string {
-  return join(process.cwd(), "ai-gateway", "data", "store.json");
-}
-
-function normalize(raw: unknown): Store {
-  const empty = emptyStore();
-  const parsed = raw && typeof raw === "object" ? (raw as Partial<Store>) : {};
-  return {
-    vendorKeys: { ...empty.vendorKeys, ...(parsed.vendorKeys ?? {}) },
-    users: Array.isArray(parsed.users) ? parsed.users : [],
-    logs: Array.isArray(parsed.logs) ? parsed.logs : []
-  };
-}
-
-function loadStore(): Store {
-  const path = storePath();
-  mkdirSync(join(process.cwd(), "ai-gateway", "data"), { recursive: true });
-  if (!existsSync(path)) {
-    saveStore(emptyStore());
-  }
-  try {
-    return normalize(JSON.parse(readFileSync(path, "utf8")));
-  } catch {
-    return emptyStore();
-  }
-}
-
-function saveStore(store: Store): void {
-  const path = storePath();
-  mkdirSync(join(process.cwd(), "ai-gateway", "data"), { recursive: true });
-  const tmp = `${path}.tmp`;
-  writeFileSync(tmp, `${JSON.stringify(normalize(store), null, 2)}\n`);
-  renameSync(tmp, path);
+  users: LegacyStoreUser[];
+  logs: LegacyStoreLog[];
 }
 
 function maskKey(key: string): string {
@@ -93,22 +55,49 @@ function vendorReady(key: string): boolean {
   return value.length > 12 && !/placeholder|chua-co|example/i.test(value);
 }
 
-function toUserView(user: StoreUser): AiUsageUserView {
+function toUserView(user: {
+  id: string;
+  name: string;
+  key: string;
+  maxBudgetUsd: number;
+  spendUsd: number;
+  blocked: boolean;
+  createdAt: Date;
+}): AiUsageUserView {
   return {
     id: user.id,
     name: user.name,
+    key: user.key,
     keyPreview: `${user.key.slice(0, 10)}…${user.key.slice(-4)}`,
     maxBudgetUsd: user.maxBudgetUsd,
     spendUsd: user.spendUsd,
     blocked: user.blocked,
-    createdAt: user.createdAt
+    createdAt: user.createdAt.toISOString()
   };
 }
 
-function toLogView(row: StoreLog): AiUsageLogView {
+function toLogView(
+  row: {
+    id: string;
+    at: Date;
+    userId: string;
+    name: string;
+    model: string;
+    provider: string;
+    inputTokens: number;
+    outputTokens: number;
+    usd: number | null;
+    ok: boolean;
+    error: string | null;
+  },
+  keyPreview: string
+): AiUsageLogView {
   return {
-    at: row.at,
+    id: row.id,
+    at: row.at.toISOString(),
+    userId: row.userId,
     name: row.name,
+    keyPreview,
     model: row.model,
     provider: row.provider,
     inputTokens: row.inputTokens,
@@ -119,71 +108,192 @@ function toLogView(row: StoreLog): AiUsageLogView {
   };
 }
 
-export function getAiUsageSnapshot(): AiUsageSnapshot {
-  const store = loadStore();
+function legacyStorePath(): string {
+  return join(process.cwd(), "ai-gateway", "data", "store.json");
+}
+
+function readLegacyStore(): LegacyStore | null {
+  const path = legacyStorePath();
+  if (!existsSync(path)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<LegacyStore>;
+    return {
+      vendorKeys: {
+        claude: parsed.vendorKeys?.claude ?? "",
+        grok: parsed.vendorKeys?.grok ?? "",
+        gemini: parsed.vendorKeys?.gemini ?? ""
+      },
+      users: Array.isArray(parsed.users) ? parsed.users : [],
+      logs: Array.isArray(parsed.logs) ? parsed.logs : []
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function importLegacyStoreIfEmpty(workspaceId: string): Promise<void> {
+  const [userCount, secretCount] = await Promise.all([
+    prisma.aiTeamUser.count({ where: { workspaceId } }),
+    prisma.aiVendorSecret.count({ where: { workspaceId } })
+  ]);
+  if (userCount > 0 || secretCount > 0) return;
+
+  const legacy = readLegacyStore();
+  if (!legacy) return;
+  const hasVendors =
+    vendorReady(legacy.vendorKeys.claude) ||
+    vendorReady(legacy.vendorKeys.grok) ||
+    vendorReady(legacy.vendorKeys.gemini);
+  if (!hasVendors && legacy.users.length === 0) return;
+
+  await prisma.$transaction(async (tx) => {
+    const again = await tx.aiTeamUser.count({ where: { workspaceId } });
+    const secretsAgain = await tx.aiVendorSecret.count({ where: { workspaceId } });
+    if (again > 0 || secretsAgain > 0) return;
+
+    for (const [vendor, secret] of Object.entries(legacy.vendorKeys)) {
+      await tx.aiVendorSecret.create({
+        data: { workspaceId, vendor, secret }
+      });
+    }
+
+    for (const user of legacy.users) {
+      await tx.aiTeamUser.create({
+        data: {
+          id: user.id,
+          workspaceId,
+          name: user.name,
+          key: user.key,
+          maxBudgetUsd: user.maxBudgetUsd,
+          spendUsd: user.spendUsd,
+          blocked: user.blocked,
+          createdAt: new Date(user.createdAt)
+        }
+      });
+    }
+
+    for (const row of legacy.logs.slice(0, 200)) {
+      await tx.aiUsageLog.create({
+        data: {
+          workspaceId,
+          userId: row.userId,
+          name: row.name,
+          model: row.model,
+          provider: row.provider,
+          inputTokens: row.inputTokens,
+          outputTokens: row.outputTokens,
+          usd: row.usd,
+          ok: row.ok,
+          error: row.error,
+          at: new Date(row.at)
+        }
+      });
+    }
+  });
+}
+
+export async function getAiUsageSnapshot(workspaceId: string): Promise<AiUsageSnapshot> {
+  await importLegacyStoreIfEmpty(workspaceId);
+
+  const [secrets, users, logs] = await Promise.all([
+    prisma.aiVendorSecret.findMany({ where: { workspaceId } }),
+    prisma.aiTeamUser.findMany({ where: { workspaceId }, orderBy: { createdAt: "asc" } }),
+    prisma.aiUsageLog.findMany({
+      where: { workspaceId },
+      orderBy: { at: "desc" },
+      take: 200
+    })
+  ]);
+
+  const byVendor = new Map(secrets.map((row) => [row.vendor, row.secret]));
+
+  const userViews = users.map(toUserView);
+  const keyPreviewByUserId = new Map(userViews.map((user) => [user.id, user.keyPreview]));
+
   return {
     gatewayOrigin: AI_GATEWAY_ORIGIN,
-    vendorKeys: {
-      claude: vendorReady(store.vendorKeys.claude),
-      grok: vendorReady(store.vendorKeys.grok),
-      gemini: vendorReady(store.vendorKeys.gemini)
-    },
-    vendorPreview: {
-      claude: maskKey(store.vendorKeys.claude),
-      grok: maskKey(store.vendorKeys.grok),
-      gemini: maskKey(store.vendorKeys.gemini)
-    },
-    users: store.users.map(toUserView),
-    logs: store.logs.map(toLogView)
+    vendors: AI_VENDORS.map((vendor) => {
+      const secret = byVendor.get(vendor.id) ?? "";
+      return {
+        id: vendor.id,
+        section: isAiVendorSection(vendor.section) ? vendor.section : "chat",
+        ready: vendorReady(secret),
+        preview: maskKey(secret),
+        modalities: vendor.modalities
+      };
+    }),
+    users: userViews,
+    logs: logs.map((row) => toLogView(row, keyPreviewByUserId.get(row.userId) ?? ""))
   };
 }
 
-export function setAiUsageVendors(input: SetAiUsageVendorsInput): AiUsageSnapshot {
-  const store = loadStore();
-  for (const name of ["claude", "grok", "gemini"] as const) {
-    const value = input[name];
-    if (typeof value === "string" && value.trim()) {
-      store.vendorKeys[name] = value.trim();
-    }
+export async function setAiUsageVendors(workspaceId: string, input: SetAiUsageVendorsInput): Promise<AiUsageSnapshot> {
+  for (const [vendor, value] of Object.entries(input)) {
+    if (!isAiVendorId(vendor)) continue;
+    if (typeof value !== "string" || !value.trim()) continue;
+    const secret = value.trim();
+    await prisma.aiVendorSecret.upsert({
+      where: { workspaceId_vendor: { workspaceId, vendor } },
+      create: { workspaceId, vendor, secret },
+      update: { secret }
+    });
   }
-  saveStore(store);
-  return getAiUsageSnapshot();
+
+  return getAiUsageSnapshot(workspaceId);
 }
 
-export function createAiUsageUser(input: CreateAiUsageUserInput): CreatedAiUsageUser {
-  const store = loadStore();
-  const user: StoreUser = {
-    id: randomBytes(6).toString("hex"),
-    name: input.name,
-    key: `sk-team-${randomBytes(16).toString("hex")}`,
-    maxBudgetUsd: input.maxBudget,
-    spendUsd: 0,
-    blocked: false,
-    createdAt: new Date().toISOString()
-  };
-  store.users.push(user);
-  saveStore(store);
+export async function createAiUsageUser(
+  workspaceId: string,
+  input: CreateAiUsageUserInput
+): Promise<CreatedAiUsageUser> {
+  const user = await prisma.aiTeamUser.create({
+    data: {
+      id: randomBytes(6).toString("hex"),
+      workspaceId,
+      name: input.name,
+      key: `sk-team-${randomBytes(16).toString("hex")}`,
+      maxBudgetUsd: input.maxBudget,
+      spendUsd: 0,
+      blocked: false
+    }
+  });
   return { user: toUserView(user), key: user.key };
 }
 
-export function setAiUsageUserBudget(id: string, maxBudgetUsd: number): AiUsageUserView {
-  const store = loadStore();
-  const user = store.users.find((item) => item.id === id);
+export async function setAiUsageUserBudget(
+  workspaceId: string,
+  id: string,
+  maxBudgetUsd: number
+): Promise<AiUsageUserView> {
+  const updated = await prisma.aiTeamUser.updateMany({
+    where: { workspaceId, id },
+    data: { maxBudgetUsd }
+  });
+  if (updated.count === 0) {
+    throw ApiError.notFound();
+  }
+  const user = await prisma.aiTeamUser.findFirst({ where: { workspaceId, id } });
   if (!user) {
     throw ApiError.notFound();
   }
-  user.maxBudgetUsd = maxBudgetUsd;
-  saveStore(store);
   return toUserView(user);
 }
 
-export function setAiUsageUserBlocked(id: string, blocked: boolean): AiUsageUserView {
-  const store = loadStore();
-  const user = store.users.find((item) => item.id === id);
+export async function setAiUsageUserBlocked(
+  workspaceId: string,
+  id: string,
+  blocked: boolean
+): Promise<AiUsageUserView> {
+  const updated = await prisma.aiTeamUser.updateMany({
+    where: { workspaceId, id },
+    data: { blocked }
+  });
+  if (updated.count === 0) {
+    throw ApiError.notFound();
+  }
+  const user = await prisma.aiTeamUser.findFirst({ where: { workspaceId, id } });
   if (!user) {
     throw ApiError.notFound();
   }
-  user.blocked = blocked;
-  saveStore(store);
   return toUserView(user);
 }

@@ -35,14 +35,14 @@ logoutBtn.addEventListener("click", () => {
 
 document.querySelector("#vendor-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  await put("/api/vendors", {
-    claude: document.querySelector("#key-claude").value,
-    grok: document.querySelector("#key-grok").value,
-    gemini: document.querySelector("#key-gemini").value
-  });
-  document.querySelector("#key-claude").value = "";
-  document.querySelector("#key-grok").value = "";
-  document.querySelector("#key-gemini").value = "";
+  const body = {};
+  for (const input of document.querySelectorAll("#vendor-fields [data-vendor]")) {
+    body[input.getAttribute("data-vendor")] = input.value;
+  }
+  await put("/api/vendors", body);
+  for (const input of document.querySelectorAll("#vendor-fields [data-vendor]")) {
+    input.value = "";
+  }
   await loadHealth();
 });
 
@@ -86,13 +86,26 @@ async function showApp() {
 async function loadHealth() {
   const data = await get("/api/health");
   if (!data) return;
-  const v = data.vendorKeys || {};
-  const p = data.vendorPreview || {};
+  const vendors = Array.isArray(data.vendors) ? data.vendors : [];
+  renderVendorFields(vendors);
+  const marks = vendors.map((vendor) => `${escapeHtml(vendor.id)}: ${mark(vendor.ready, vendor.preview)}`);
   document.querySelector("#status").innerHTML = `
     <h2>Trạng thái</h2>
     <p>Cổng: <strong class="ok">${escapeHtml(location.origin)}</strong></p>
-    <p>Claude: ${mark(v.claude, p.claude)} · Grok: ${mark(v.grok, p.grok)} · Gemini: ${mark(v.gemini, p.gemini)}</p>
+    <p>${marks.join(" · ")}</p>
   `;
+}
+
+function renderVendorFields(vendors) {
+  const fields = document.querySelector("#vendor-fields");
+  if (!fields || fields.dataset.ready === "1") return;
+  fields.innerHTML = vendors
+    .map(
+      (vendor) =>
+        `<label>${escapeHtml(vendor.id)} <input data-vendor="${escapeHtml(vendor.id)}" type="password" autocomplete="off" placeholder="${escapeHtml(vendor.placeholder || "")}" /></label>`
+    )
+    .join("");
+  fields.dataset.ready = "1";
 }
 
 async function loadUsers() {

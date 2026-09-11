@@ -1,0 +1,65 @@
+# Tải bảng giá LiteLLM mỗi tuần, mở PR nếu bản chụp đổi.
+#
+# Hẹn giờ ở ĐÂY (cron của hạ tầng GitHub Actions), không phải `setInterval` trong tiến trình Next.
+# Chạy tay: Actions → catalog-prices → Run workflow.
+#
+# ⚠ Workflow `schedule` chỉ chạy trên nhánh mặc định, và GitHub tắt nó nếu repo im hơn ~60 ngày.
+
+name: catalog-prices
+
+on:
+  schedule:
+    # Thứ Hai 03:00 UTC = 10:00 ICT.
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: catalog-prices
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: pnpm catalog:prices
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      GIT_AUTHOR_NAME: github-actions[bot]
+      GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+      GIT_COMMITTER_NAME: github-actions[bot]
+      GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm catalog:prices
+
+      - name: Mở PR nếu bản chụp đổi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git add lib/catalog/litellm-model-prices.json lib/catalog/litellm-ui-rates.json lib/catalog/litellm-vendor-rates.json
+          if git diff --staged --quiet; then
+            echo "LiteLLM snapshot unchanged"
+            exit 0
+          fi
+          git checkout -B chore/litellm-prices
+          git commit -m "Cập nhật bảng giá LiteLLM (cron tuần)."
+          git push -u origin chore/litellm-prices --force
+          open="$(gh pr list --head chore/litellm-prices --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$open" ]; then
+            gh pr create --title "Cập nhật bảng giá LiteLLM" --body "Cron tuần tải lại bảng giá LiteLLM. Merge để trang Model và giá và ước tính USD trên nhật ký dùng số mới."
+          fi

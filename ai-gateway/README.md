@@ -3,7 +3,7 @@
 Tách khỏi sản phẩm Công việc: Express cổng **3100** là cổng LLM (Claude Code / Cline / Cursor Chat).
 
 Giao diện admin: đăng nhập Comitor rồi mở **http://localhost:3050/ai-usage**
-(`pnpm dev` ở gốc repo này). Toàn bộ app là sản phẩm AI Usage — không lọc theo slug workspace.
+(`pnpm dev` ở gốc repo này). Dữ liệu key/usage theo workspace đang đăng nhập, lưu trên Postgres.
 
 ## Chạy
 
@@ -29,7 +29,7 @@ pnpm start
 3. Nhật ký: người, model, token, tiền ước tính.
 4. Khóa / mở khóa mã; sửa trần khi cần.
 
-Key hãng và mã nội bộ nằm ở `data/store.json` trên máy này — không commit file đó.
+Key hãng và mã nội bộ nằm ở PostgreSQL (cùng `DATABASE_URL` với app 3050, schema `ai-usage`). File `data/store.json` nếu còn thì chỉ được nhập một lần khi admin mở `/ai-usage`.
 
 ## Việc dev (cùng một mã)
 
@@ -37,7 +37,9 @@ URL cổng LLM: `http://localhost:3100`
 
 ### Claude Code (VS Code) — chỉ Claude
 
-Settings JSON:
+1. Cài extension Claude Code trong VS Code.
+2. `Ctrl+Shift+P` (Windows) / `Cmd+Shift+P` (macOS) → Preferences: Open User Settings (JSON).
+3. Dán:
 
 ```json
 {
@@ -48,13 +50,26 @@ Settings JSON:
 }
 ```
 
-Claude Code không có menu chọn Grok/Gemini. Muốn ba nhà → dùng Cline / Continue / Cursor Chat.
+Không thêm `/v1`. Reload Window rồi hỏi như bình thường.
+
+Claude Code không có menu chọn Grok/Gemini. Muốn ba nhà → dùng Cline / Continue / Cursor Chat. Chưa dán key Claude trên `/ai-usage` thì hỏi sẽ lỗi 503.
+
+### Claude Desktop (ứng dụng trên máy)
+
+Desktop **không** đọc settings.json của VS Code.
+
+1. Mở ứng dụng Claude Desktop.
+2. Help → Troubleshooting → Enable Developer Mode (app khởi động lại, hiện menu Developer).
+3. Developer → Configure Third-Party Inference.
+4. Điền: Inference provider = **Gateway** · Credential kind = **Static API key** · Gateway base URL = `http://localhost:3100` · Gateway API key = mã `sk-team-…` · Auth scheme = **Bearer**.
+
+Nếu hiện `Gateway was unreachable`: cổng 3100 phải đang chạy, URL là `http` chứ không phải `https`.
 
 ### Cline / Continue (VS Code) — Claude, Grok, Gemini
 
 - Base URL: `http://localhost:3100/v1`
 - API key: mã nội bộ
-- Model: `claude-sonnet-4-6` · `grok-3` · `gemini-2.5-flash`
+- Model: `claude-sonnet-4-6` · `grok-3` · `gemini-3.6-flash` · `deepseek-flash` · `deepseek-v4-pro`
 
 ### Cursor Chat / Agent
 
@@ -68,6 +83,6 @@ Vẫn tạo mã và khai trên VS Code được. Hỏi AI sẽ trả lỗi bảo
 
 ## Ghi chú
 
-- Tiền trên nhật ký là **ước tính** theo bảng giá gần đúng; hóa đơn thật nằm ở Anthropic / xAI / Google.
+- Tiền trên nhật ký là **ước tính** từ bản chụp bảng giá LiteLLM (cron tuần hoặc `pnpm catalog:prices`); cổng đọc lại file theo mtime, không cần restart. Không khớp id thì để trống USD. Hóa đơn thật nằm ở Anthropic / xAI / Google.
 - Streaming gửi một khối (đủ cho Claude Code / Cline); chưa phải token-by-token.
 - Đây là công cụ nội bộ trên mạng tin cậy: key lưu plaintext trong JSON.

@@ -1,9 +1,9 @@
-import { complete } from "./providers.js";
+import { complete, generateImage, generateVideo } from "./providers.js";
 import { assertBudget, extractUserKey, findUserByKey, MODELS, priceUsd, recordUse, resolveModel } from "./team.js";
 
 export async function handleChatCompletions(req, res) {
-  const user = requireUser(req);
-  const model = requireModel(req.body?.model);
+  const user = await requireUser(req);
+  const model = requireModel(req.body?.model, "chat");
   const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
   const maxTokens =
     Number(req.body?.max_tokens || req.body?.max_completion_tokens) > 0
@@ -37,8 +37,8 @@ export async function handleChatCompletions(req, res) {
 }
 
 export async function handleMessages(req, res) {
-  const user = requireUser(req);
-  const model = requireModel(req.body?.model);
+  const user = await requireUser(req);
+  const model = requireModel(req.body?.model, "chat");
   const maxTokens = Number(req.body?.max_tokens) > 0 ? Number(req.body.max_tokens) : 2048;
   const messages = [
     ...flattenSystem(req.body?.system),
@@ -98,11 +98,114 @@ export async function handleMessages(req, res) {
   });
 }
 
+export async function handleImageGenerations(req, res) {
+  const user = await requireUser(req);
+  const model = requireModel(req.body?.model, "image");
+  const prompt = String(req.body?.prompt ?? "").trim();
+  if (!prompt) {
+    throw fail(400, "Thiếu prompt.");
+  }
+  const result = await runMedia(user, model, () =>
+    generateImage({
+      provider: model.provider,
+      upstream: model.upstream,
+      prompt,
+      workspaceId: user.workspaceId
+    })
+  );
+  res.json(result.body);
+}
+
+export async function handleVideos(req, res) {
+  const user = await requireUser(req);
+  const model = requireModel(req.body?.model, "video");
+  const prompt = String(req.body?.prompt ?? "").trim();
+  if (!prompt) {
+    throw fail(400, "Thiếu prompt.");
+  }
+  const result = await runMedia(user, model, () =>
+    generateVideo({
+      provider: model.provider,
+      upstream: model.upstream,
+      prompt,
+      workspaceId: user.workspaceId
+    })
+  );
+  res.json(result.body);
+}
+
 export function handleModels(_req, res) {
   res.json({
     object: "list",
-    data: MODELS.map((item) => ({ id: item.id, object: "model", owned_by: item.provider }))
+    data: MODELS.map((item) => ({
+      id: item.id,
+      object: "model",
+      owned_by: item.provider,
+      kind: item.kind
+    }))
   });
+}
+
+/** Cline provider Gemini gọi `/v1/models/{id}:streamGenerateContent`, không phải `/v1/chat/completions`. */
+export async function handleGeminiGenerate(req, res) {
+  const user = await requireUser(req);
+  const parsed = parseGeminiModelPath(req.path);
+  if (!parsed) {
+    throw fail(404, "Đường Gemini không hỗ trợ.");
+  }
+  const model = requireModel(parsed.model, "chat");
+  const messages = geminiContentsToMessages(req.body);
+  const maxTokens =
+    Number(req.body?.generationConfig?.maxOutputTokens) > 0 ? Number(req.body.generationConfig.maxOutputTokens) : 2048;
+  const result = await run(user, model, messages, maxTokens);
+  const payload = {
+    candidates: [
+      {
+        content: { role: "model", parts: [{ text: result.text }] },
+        finishReason: "STOP"
+      }
+    ],
+    usageMetadata: {
+      promptTokenCount: result.inputTokens,
+      candidatesTokenCount: result.outputTokens,
+      totalTokenCount: result.inputTokens + result.outputTokens
+    }
+  };
+  if (parsed.stream) {
+    startStream(res);
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    res.end();
+    return;
+  }
+  res.json(payload);
+}
+
+function parseGeminiModelPath(path) {
+  const match = String(path).match(/^\/v1(?:beta)?\/models\/([^/]+):(streamGenerateContent|generateContent)$/);
+  if (!match) return null;
+  const model = decodeURIComponent(match[1] ?? "").replace(/^models\//, "");
+  return { model, stream: match[2] === "streamGenerateContent" };
+}
+
+function geminiContentsToMessages(body) {
+  const messages = [];
+  const system = body?.systemInstruction;
+  const systemText = Array.isArray(system?.parts)
+    ? system.parts.map((part) => part?.text ?? "").join("")
+    : typeof system === "string"
+      ? system
+      : "";
+  if (systemText.trim()) {
+    messages.push({ role: "system", content: systemText });
+  }
+  for (const item of Array.isArray(body?.contents) ? body.contents : []) {
+    const text = Array.isArray(item?.parts) ? item.parts.map((part) => part?.text ?? "").join("") : "";
+    messages.push({
+      role: item?.role === "model" ? "assistant" : "user",
+      content: text
+    });
+  }
+  return messages;
 }
 
 async function run(user, model, messages, maxTokens) {
@@ -111,11 +214,13 @@ async function run(user, model, messages, maxTokens) {
     const result = await complete({
       provider: model.provider,
       modelId: model.id,
+      upstream: model.upstream,
       messages,
-      maxTokens
+      maxTokens,
+      workspaceId: user.workspaceId
     });
-    const usd = priceUsd(model.id, result.inputTokens, result.outputTokens);
-    recordUse({
+    const usd = priceUsd(model, result.inputTokens, result.outputTokens);
+    await recordUse({
       user,
       model: model.id,
       provider: model.provider,
@@ -126,7 +231,7 @@ async function run(user, model, messages, maxTokens) {
     });
     return { ...result, id: `msg_${Date.now().toString(16)}` };
   } catch (error) {
-    recordUse({
+    await recordUse({
       user,
       model: model.id,
       provider: model.provider,
@@ -140,18 +245,52 @@ async function run(user, model, messages, maxTokens) {
   }
 }
 
-function requireUser(req) {
-  const user = findUserByKey(extractUserKey(req));
+async function runMedia(user, model, generate) {
+  assertBudget(user);
+  try {
+    const result = await generate();
+    const usd = priceUsd(model, result.inputTokens, result.outputTokens);
+    await recordUse({
+      user,
+      model: model.id,
+      provider: model.provider,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      usd,
+      ok: true
+    });
+    return result;
+  } catch (error) {
+    await recordUse({
+      user,
+      model: model.id,
+      provider: model.provider,
+      inputTokens: 0,
+      outputTokens: 0,
+      usd: 0,
+      ok: false,
+      error: error.message
+    });
+    throw error;
+  }
+}
+
+async function requireUser(req) {
+  const user = await findUserByKey(extractUserKey(req));
   if (!user) {
     throw fail(401, "Mã nội bộ không hợp lệ.");
   }
   return user;
 }
 
-function requireModel(name) {
+function requireModel(name, kind) {
   const model = resolveModel(name);
+  const ids = MODELS.filter((item) => !kind || item.kind === kind).map((item) => item.id);
   if (!model) {
-    throw fail(400, `Model không hỗ trợ. Dùng: ${MODELS.map((item) => item.id).join(", ")}`);
+    throw fail(400, `Model không hỗ trợ. Dùng: ${ids.join(", ")}`);
+  }
+  if (kind && model.kind !== kind) {
+    throw fail(400, `Model ${model.id} là ${model.kind}, endpoint này cần ${kind}.`);
   }
   return model;
 }
