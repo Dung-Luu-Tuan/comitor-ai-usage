@@ -15,9 +15,7 @@
     "out": 15
   },
   "grok-3": {
-    "kind": "chat",
-    "in": 1.25,
-    "out": 2.5
+    "kind": "unknown"
   },
   "gemini-3.6-flash": {
     "kind": "chat",
@@ -26,8 +24,8 @@
   },
   "deepseek-flash": {
     "kind": "chat",
-    "in": 0.44,
-    "out": 1.32
+    "in": 0.3,
+    "out": 1.2
   },
   "deepseek-v4-pro": {
     "kind": "chat",
@@ -49,8 +47,7 @@
     "flatUsd": 0.02
   },
   "gemini-imagen": {
-    "kind": "image",
-    "flatUsd": 0.04
+    "kind": "unknown"
   },
   "flux-pro": {
     "kind": "image",
